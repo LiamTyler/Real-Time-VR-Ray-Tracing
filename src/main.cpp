@@ -1,7 +1,13 @@
 #include "include/utils.h"
 
+// Screen width / height
 int SW = 800;
 int SH = 800;
+
+vec3 camera_pos;
+vec3 camera_dir;
+vec3 camera_up;
+float camera_fov;
 
 const float verts[] = {
     -1, 1, 0,
@@ -69,9 +75,6 @@ int main() {
     GLuint render_program = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
     glUseProgram(render_program);
 
-    // GLuint tex = LoadTexture("../hw4/textures/door_A.bmp");
-
-
     GLuint tex_output;
     glGenTextures(1, &tex_output);
     glActiveTexture(GL_TEXTURE0);
@@ -82,8 +85,6 @@ int main() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SW, SH, 0, GL_RGBA, GL_FLOAT, NULL);
     glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-
 
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -110,8 +111,12 @@ int main() {
     GLint change = glGetUniformLocation(compute_program, "change_bool");
     glUniform1i(change, change_bool);
 
+
+    unsigned int lastTime = SDL_GetTicks();
+    unsigned int currentTime;
     SDL_Event e;
     bool quit = false;
+    unsigned int frameCounter = 0;
     while (!quit) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT)
@@ -138,6 +143,13 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, tex_output);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         SDL_GL_SwapWindow(window);
+        frameCounter++;
+        currentTime = SDL_GetTicks();
+        if (currentTime > lastTime + 1000) {
+            cout << "FPS: " << frameCounter << endl;
+            lastTime = currentTime;
+            frameCounter = 0;
+        }
     }
 
     glDeleteProgram(render_program);
