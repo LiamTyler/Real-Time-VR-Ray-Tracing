@@ -4,10 +4,10 @@
 int SW = 800;
 int SH = 800;
 
-vec3 camera_pos;
-vec3 camera_dir;
-vec3 camera_up;
-float camera_fov;
+vec3 camera_pos = vec3(0, 0, 0);
+vec3 camera_dir = normalize(vec3(0, 0, 1));
+vec3 camera_up =  normalize(vec3(0, 1, 0));
+float camera_fov = 90 * M_PI / 180;
 
 const float verts[] = {
     -1, 1, 0,
@@ -106,10 +106,25 @@ int main() {
     glEnableVertexAttribArray(texAttrib);
     glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
+    // Calculate camera stuff
+
+    // distance from the camera to the 'plane' we are drawing on
+    float d = .5*SH / tan(.5 * camera_fov);
+    // Middle of the plane
+    vec3 mid = camera_pos + d * camera_dir;
+    // Distance of one pixel on the X axis on the plane
+    vec3 dx = normalize(cross(camera_dir, camera_up));
+    // Distance of one pixel on the Y axis on the plane
+    vec3 dy = -camera_up;
+    // Position of the upper left pixel on the plane
+    vec3 ul = mid - .5*(SW - 1)*dx - .5*(SH - 1)*dy;
+
+    // Send the camera info to the compute shader
     glUseProgram(compute_program);
-    int change_bool = 1;
-    GLint change = glGetUniformLocation(compute_program, "change_bool");
-    glUniform1i(change, change_bool);
+    glUniform3fv(glGetUniformLocation(compute_program, "camera_pos"), 1, &camera_pos[0]);
+    glUniform3fv(glGetUniformLocation(compute_program, "camera_dx"), 1, &dx[0]);
+    glUniform3fv(glGetUniformLocation(compute_program, "camera_dy"), 1, &dy[0]);
+    glUniform3fv(glGetUniformLocation(compute_program, "camera_ul"), 1, &ul[0]);
 
 
     unsigned int lastTime = SDL_GetTicks();
@@ -124,9 +139,7 @@ int main() {
             if (e.type == SDL_KEYDOWN) {
                 switch(e.key.keysym.sym) {
                     case SDLK_c:
-                        glUseProgram(compute_program);
-                        change_bool = !change_bool;
-                        glUniform1i(change, change_bool);
+                        // glUseProgram(compute_program);
                         break;
                 }
             }
