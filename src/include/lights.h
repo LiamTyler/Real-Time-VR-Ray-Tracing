@@ -27,8 +27,8 @@ typedef struct PointLight {
         pos = p;
     }
 
-    vec3 color;
-    vec3 pos;
+    vec3 color; float pad1;
+    vec3 pos; float pad2;
 
 } PointLight;
 
@@ -43,8 +43,8 @@ typedef struct DirectionalLight {
         dir = d;
     }
 
-    vec3 color;
-    vec3 dir;
+    vec3 color; float pad1;
+    vec3 dir; float pad2;
 
 } DirectionalLight;
 

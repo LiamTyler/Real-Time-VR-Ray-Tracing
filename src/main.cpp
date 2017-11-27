@@ -6,15 +6,6 @@ int SW = 800;
 int SH = 800;
 
 Camera camera;
-typedef struct shader_data_t {
-    vec4 pos;
-    float r; vec3 pad;
-    vec4 ka;
-    vec4 kd;
-    vec4 ks;
-    vec4 kt;
-    vec4 e;
-} shader_data;
 
 const float verts[] = {
     -1, 1, 0,
@@ -41,8 +32,8 @@ int main() {
         cout << "Could not parse scene" << endl;
         return 1;
     }
-    SW = parser.film_resolution_.x;
-    SH = parser.film_resolution_.y;
+    SW = parser.film_resolution.x;
+    SH = parser.film_resolution.y;
     SDL_Window* window = InitAndWindow("Real Time RayTracer", 100, 100, SW, SH);
     cout << "vendor: " << glGetString(GL_VENDOR) << endl;
     cout << "renderer: " << glGetString(GL_RENDERER) << endl;
@@ -102,7 +93,7 @@ int main() {
     glEnableVertexAttribArray(texAttrib);
     glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-    camera = parser.camera_;
+    camera = parser.camera;
     // distance from the camera to the 'plane' we are drawing on
     float d = SH / (2 * tan(camera.height_fov / 2));
     // Middle of the plane
@@ -126,25 +117,29 @@ int main() {
     GLuint ssbo = 0;
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    // shader_data arr[parser.spheres_.size()];
-    // for (int i = 0; i < parser.spheres_.size(); i++) {
-    //     Sphere s = parser.spheres_[i];
-    //     arr[i].pos = vec4(s.pos, 0);
-    //     arr[i].r = s.radius;
-    //     arr[i].ka = vec4(s.mat.ka, 0);
-    //     arr[i].kd = vec4(s.mat.kd, 0);
-    //     arr[i].ks = vec4(s.mat.ks, 0);
-    //     arr[i].kt = vec4(s.mat.kt, 0);
-    //     arr[i].e = vec4(s.mat.power, s.mat.ior, 0, 0);
-    // }
-    // cout << "arr size: " << sizeof(arr) << endl;
-    // glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(arr), arr, GL_DYNAMIC_COPY);
-    cout << "sphere size: " << sizeof(Sphere) << endl;
-    cout << "mat size: " << sizeof(Material) << endl;
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser.spheres_.size(), &parser.spheres_[0], GL_STATIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser.spheres.size(), &parser.spheres[0], GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glUniform1i(glGetUniformLocation(compute_program, "num_spheres"), parser.spheres_.size());
+    glUniform1i(glGetUniformLocation(compute_program, "num_spheres"), parser.spheres.size());
+
+    // send lights to the GPU
+    // ambient
+    glUniform3fv(glGetUniformLocation(compute_program, "ambient_light"),
+                 1, (GLfloat*) &parser.ambient_light);
+    // directional
+    GLuint dir_lights_ssbo = 0;
+    glGenBuffers(1, &dir_lights_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, dir_lights_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(DirectionalLight) * parser.directional_lights.size(), &parser.directional_lights[0], GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, dir_lights_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glUniform1i(glGetUniformLocation(compute_program, "num_dir_lights"), parser.directional_lights.size());
+    /*
+    // point
+    */
+    // send other variables to the GPU
+    glUniform4fv(glGetUniformLocation(compute_program, "background_color"),
+                 1, &parser.background_color[0]);
 
     unsigned int lastTime = SDL_GetTicks();
     unsigned int currentTime;

@@ -20,17 +20,17 @@ class Parser {
         bool Parse();
 
     // private:
-        string scene_filename_;
-        Camera camera_;
-        ivec2 film_resolution_;
+        string scene_filename;
+        Camera camera;
+        ivec2 film_resolution;
 
-        vector<Sphere> spheres_;
+        vector<Sphere> spheres;
 
-        vector<PointLight> point_lights_;
-        vector<DirectionalLight> directional_lights_;
-        AmbientLight ambient_light_;
+        vector<PointLight> point_lights;
+        vector<DirectionalLight> directional_lights;
+        AmbientLight ambient_light;
         
-        vec3 background_color_;
+        vec4 background_color;
 };
 
 #endif  // SRC_INCLUDE_PARSER_H_

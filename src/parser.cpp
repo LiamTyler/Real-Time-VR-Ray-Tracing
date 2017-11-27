@@ -1,25 +1,25 @@
 #include "include/parser.h"
 
 Parser::Parser() {
-    scene_filename_ = "scene.scn";
+    scene_filename = "scene.scn";
     Init();
 }
 
 Parser::Parser(string filename) {
-    scene_filename_ = filename;
+    scene_filename = filename;
     Init();
 }
 
 void Parser::Init() {
-    camera_ = Camera();
-    ambient_light_ = AmbientLight();
-    film_resolution_ = ivec2(640, 480);
+    camera = Camera();
+    ambient_light = AmbientLight();
+    film_resolution = ivec2(640, 480);
 }
 
 bool Parser::Parse() {
-    ifstream in(scene_filename_);
+    ifstream in(scene_filename);
     if(in.fail()){
-        cout << "Can't open the scene file '" << scene_filename_ << "'" << endl;
+        cout << "Can't open the scene file '" << scene_filename << "'" << endl;
         return false;
     }
 
@@ -38,20 +38,20 @@ bool Parser::Parse() {
             float ha;
             in >> ha;
             ha = ha * 2 * M_PI / 180;
-            camera_ = Camera(pos, dir, up, ha);
+            camera = Camera(pos, dir, up, ha);
         } else if (command == "film_resolution") {
             int w, h;
             in >> w >> h;
-            film_resolution_ = ivec2(w, h);
+            film_resolution = ivec2(w, h);
         } else if (command == "sphere") {
             vec3 p;
             float r;
             in >> p >> r;
-            spheres_.push_back(Sphere(p, r, current_material));
+            spheres.push_back(Sphere(p, r, current_material));
         } else if (command == "background") {
             vec3 c;
             in >> c;
-            background_color_ = c;
+            background_color = vec4(c, 1);
         } else if (command == "material") {
             vec3 a, d, s, t;
             float ns, ior;
@@ -60,15 +60,15 @@ bool Parser::Parse() {
         } else if (command == "directional_light"){
             vec3 c, d;
             in >> c >> d;
-            directional_lights_.push_back(DirectionalLight(c, d));
+            directional_lights.push_back(DirectionalLight(c, d));
         } else if (command == "point_light"){
             vec3 c, p;
             in >> c >> p;
-            point_lights_.push_back(PointLight(c, p));
+            point_lights.push_back(PointLight(c, p));
         } else if (command == "ambient_light"){
             vec3 c;
             in >> c;
-            ambient_light_ = AmbientLight(c);
+            ambient_light = AmbientLight(c);
         } else {
             getline(in, line);
             cout << "WARNING. Do not know command: " << command << endl;
