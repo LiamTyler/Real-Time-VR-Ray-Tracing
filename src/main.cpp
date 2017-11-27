@@ -112,8 +112,14 @@ int main() {
     glUniform3fv(glGetUniformLocation(compute_program, "camera_dy"), 1, &dy[0]);
     glUniform3fv(glGetUniformLocation(compute_program, "camera_ul"), 1, &ul[0]);
 
-    // Send shapes to the GPU
-
+    // Send spheres to the GPU
+    glUseProgram(compute_program);
+    GLuint ssbo = 0;
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere), &parser.spheres_[0], GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     unsigned int lastTime = SDL_GetTicks();
     unsigned int currentTime;
@@ -127,7 +133,6 @@ int main() {
             if (e.type == SDL_KEYDOWN) {
                 switch(e.key.keysym.sym) {
                     case SDLK_c:
-                        // glUseProgram(compute_program);
                         break;
                 }
             }

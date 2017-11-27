@@ -17,10 +17,18 @@ typedef struct Sphere {
         mat = m;
     }
 
-    vec3 pos;
-    float radius;
+    vec3 pos; float pad;
     Material mat;
+    float radius; vec3 pad2;
 
 } Sphere;
+
+inline ostream& operator<<(ostream& out, const Sphere& s) {
+    out << "pos: " << s.pos << endl;
+    out << "radius: " << s.radius << endl;
+    out << "Material: " << endl;
+    out << s.mat << endl;
+    return out;
+}
 
 #endif  // SRC_INCLUDE_SHAPES_H_

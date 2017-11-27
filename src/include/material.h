@@ -22,13 +22,25 @@ typedef struct Material {
         ior = i;
     }
 
-    vec3 ka;
-    vec3 kd;
-    vec3 ks;
-    vec3 kt;
+    vec3 ka; float p1;
+    vec3 kd; float p2;
+    vec3 ks; float p3;
+    vec3 kt; float p4;
     float power;
-    float ior;
+    float ior; vec2 pad;
 
 } Material;
+
+
+
+inline ostream& operator<<(ostream& out, const Material& m) {
+    out << "ka: " << m.ka << endl;
+    out << "kd: " << m.kd << endl;
+    out << "ks: " << m.ks << endl;
+    out << "kt: " << m.kt << endl;
+    out << "power: " << m.power << endl;
+    out << "ior: " << m.ior << endl;
+    return out;
+}
 
 #endif  // SRC_INCLUDE_MATERIAL_H_
