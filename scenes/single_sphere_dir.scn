@@ -1,0 +1,12 @@
+#film_resolution 400 400
+background 1 1 1 
+
+camera 0 0 0  0 0 1   0 1 0   45
+
+ambient_light .1 .1 .1
+#point_light  32000 32000 32000 0 200 200
+directional_light .7 .7 .7  1 0 0
+
+#material 1 0 0  1 0 0  0 0 0  50  0 0 0  1.0
+material 1 0 0  1 0 0  .5 .5 .5  50  0 0 0  1.0
+sphere 0 0 300 100

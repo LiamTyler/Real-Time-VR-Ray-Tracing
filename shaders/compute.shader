@@ -16,7 +16,7 @@ const float pe = 50;
 
 vec3 ambient_light = vec3(.1, .1, .1);
 vec3 directional_light_color = vec3(.7, .7, .7);
-vec3 directional_light_dir   = normalize(vec3(0, 0, 1));
+vec3 directional_light_dir   = normalize(vec3(1, 0, 0));
 
 vec4 background_color = vec4(1.0, 1.0, 1.0, 1.0);
 

@@ -1,13 +1,11 @@
 #include "include/utils.h"
+#include "include/parser.h"
 
-// Screen width / height
+// Screen width / height (scene file overwrites these values)
 int SW = 800;
 int SH = 800;
 
-vec3 camera_pos = vec3(0, 0, 0);
-vec3 camera_dir = normalize(vec3(0, 0, 1));
-vec3 camera_up =  normalize(vec3(0, 1, 0));
-float camera_fov = 90 * M_PI / 180;
+Camera camera;
 
 const float verts[] = {
     -1, 1, 0,
@@ -27,26 +25,15 @@ const float uv[] = {
     0, 1,
 };
 
-inline GLuint LoadTexture(string path) {
-    SDL_Surface* s = SDL_LoadBMP(path.c_str());
-    if (s == NULL) {
-        cerr << "cold not load texture: " << path << endl;
-        return -1;
-    }
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, s->w, s->h, 0, GL_BGR, GL_UNSIGNED_BYTE, s->pixels);
-    SDL_FreeSurface(s);
-
-    return tex;
-}
-
 int main() {
+    // Parse the scene file
+    Parser parser("scenes/single_sphere_dir.scn");
+    if (!parser.Parse()) {
+        cout << "Could not parse scene" << endl;
+        return 1;
+    }
+    SW = parser.film_resolution_.x;
+    SH = parser.film_resolution_.y;
     SDL_Window* window = InitAndWindow("Real Time RayTracer", 100, 100, SW, SH);
     cout << "vendor: " << glGetString(GL_VENDOR) << endl;
     cout << "renderer: " << glGetString(GL_RENDERER) << endl;
@@ -106,25 +93,26 @@ int main() {
     glEnableVertexAttribArray(texAttrib);
     glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-    // Calculate camera stuff
-
+    camera = parser.camera_;
     // distance from the camera to the 'plane' we are drawing on
-    float d = .5*SH / tan(.5 * camera_fov);
+    float d = SH / (2 * tan(camera.height_fov / 2));
     // Middle of the plane
-    vec3 mid = camera_pos + d * camera_dir;
+    vec3 mid = camera.pos + d * camera.dir;
     // Distance of one pixel on the X axis on the plane
-    vec3 dx = normalize(cross(camera_dir, camera_up));
+    vec3 dx = normalize(cross(camera.up, camera.dir));
     // Distance of one pixel on the Y axis on the plane
-    vec3 dy = -camera_up;
+    vec3 dy = -camera.up;
     // Position of the upper left pixel on the plane
     vec3 ul = mid - .5*(SW - 1)*dx - .5*(SH - 1)*dy;
 
     // Send the camera info to the compute shader
     glUseProgram(compute_program);
-    glUniform3fv(glGetUniformLocation(compute_program, "camera_pos"), 1, &camera_pos[0]);
+    glUniform3fv(glGetUniformLocation(compute_program, "camera_pos"), 1, &camera.pos[0]);
     glUniform3fv(glGetUniformLocation(compute_program, "camera_dx"), 1, &dx[0]);
     glUniform3fv(glGetUniformLocation(compute_program, "camera_dy"), 1, &dy[0]);
     glUniform3fv(glGetUniformLocation(compute_program, "camera_ul"), 1, &ul[0]);
+
+    // Send shapes to the GPU
 
 
     unsigned int lastTime = SDL_GetTicks();
