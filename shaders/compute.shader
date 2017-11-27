@@ -8,11 +8,15 @@ uniform vec3 camera_dy;
 uniform vec3 camera_ul;
 uniform int num_spheres;
 uniform int num_dir_lights;
+uniform int num_point_lights;
 uniform vec4 background_color;
 
 uniform vec3 ambient_light;
-// vec3 directional_light_color = vec3(.7, .7, .7);
-// vec3 directional_light_dir   = normalize(vec3(0, 0, 1));
+
+struct Ray {
+    vec3 pos;
+    vec3 dir;
+} ray;
 
 struct Material {
     vec4 ka;
@@ -31,25 +35,31 @@ struct Sphere {
     Material mat;
 };
 
+struct DirectionalLight {
+    vec4 color;
+    vec4 dir;
+};
+
+struct PointLight {
+    vec4 color;
+    vec4 pos;
+};
+
 layout(std430, binding=2) buffer sphere_list
 {
     Sphere spheres[];
 };
 
-struct DirectionalLight {
-    vec4 color;
-    vec4 dir;
-};
 
 layout(std430, binding=3) buffer dir_light_list
 {
     DirectionalLight dir_lights[];
 };
 
-struct Ray {
-    vec3 pos;
-    vec3 dir;
-} ray;
+layout(std430, binding=4) buffer point_light_list
+{
+    PointLight point_lights[];
+};
 
 bool IntersectSphere(in const Ray r, const in Sphere s, out float tmin, out float tmax) {
     // find if ray hit the sphere
@@ -118,14 +128,31 @@ void main() {
         vec3 n = normalize(hit_p - hit_sphere.pos.xyz);
         vec3 v = ray.dir;
         vec3 ret = vec3(0, 0, 0);
+        // Add Ambient Light
         ret += hit_sphere.mat.ka.xyz * ambient_light;
+        // Add directional Lights
         for (int i = 0; i < num_dir_lights; ++i) {
             vec3 l = -dir_lights[i].dir.xyz;
             Ray shadow = Ray(hit_p + 0.01*l, l);
-            if (!IntersectSphere(shadow, hit_sphere, tmin, tmax)) {
+            if (!Intersect(shadow, hit_sphere_index, tmin, tmax)) {
                 ret += hit_sphere.mat.kd.xyz * dir_lights[i].color.xyz * max(0.0, dot(n, l));
                 float specular = pow(max(dot(v, reflect(l, n)), 0), hit_sphere.mat.power);
                 ret += hit_sphere.mat.ks.xyz * dir_lights[i].color.xyz * specular;
+            } else {
+                pixel = vec4(0, 0, 0, 1);
+            }
+        }
+        // Add point lights
+        for (int i = 0; i < num_point_lights; ++i) {
+            vec3 l = point_lights[i].pos.xyz - hit_p;
+            float d = length(l);
+            l = normalize(l);
+            Ray shadow = Ray(hit_p + 0.01*l, l);
+            if (!Intersect(shadow, hit_sphere_index, tmin, tmax) || length(tmin*shadow.dir) >= d) {
+                vec3 I = (1.0 / (d*d)) * point_lights[i].color.xyz;
+                ret += I* hit_sphere.mat.kd.xyz * max(0.0, dot(n, l));
+                float specular = pow(max(dot(v, reflect(l, n)), 0), hit_sphere.mat.power);
+                ret += I * hit_sphere.mat.ks.xyz * specular;
             } else {
                 pixel = vec4(0, 0, 0, 1);
             }

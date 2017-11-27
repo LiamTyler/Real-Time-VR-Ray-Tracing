@@ -134,9 +134,14 @@ int main() {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, dir_lights_ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glUniform1i(glGetUniformLocation(compute_program, "num_dir_lights"), parser.directional_lights.size());
-    /*
     // point
-    */
+    GLuint point_lights_ssbo = 0;
+    glGenBuffers(1, &point_lights_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, point_lights_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PointLight) * parser.point_lights.size(), &parser.point_lights[0], GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, point_lights_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glUniform1i(glGetUniformLocation(compute_program, "num_point_lights"), parser.point_lights.size());
     // send other variables to the GPU
     glUniform4fv(glGetUniformLocation(compute_program, "background_color"),
                  1, &parser.background_color[0]);
