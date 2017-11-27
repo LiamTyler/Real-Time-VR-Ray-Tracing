@@ -22,12 +22,12 @@ typedef struct Material {
         ior = i;
     }
 
-    vec3 ka; float p1;
-    vec3 kd; float p2;
-    vec3 ks; float p3;
-    vec3 kt; float p4;
+    vec3 ka; float pad1;
+    vec3 kd; float pad2;
+    vec3 ks; float pad3;
+    vec3 kt; float pad4;
     float power;
-    float ior; vec2 pad;
+    float ior; vec2 pad5;
 
 } Material;
 

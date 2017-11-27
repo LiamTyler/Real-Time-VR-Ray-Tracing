@@ -6,7 +6,6 @@ uniform vec3 camera_pos;
 uniform vec3 camera_dx;
 uniform vec3 camera_dy;
 uniform vec3 camera_ul;
-
 uniform int num_spheres;
 
 vec3 ambient_light = vec3(.1, .1, .1);
@@ -27,13 +26,22 @@ struct Sphere {
     float radius;
 };
 */
-struct Sphere {
-    vec4 pos;
+
+struct Material {
     vec4 ka;
     vec4 kd;
     vec4 ks;
     vec4 kt;
-    vec4 e;
+    float power;
+    float ior;
+    float pad1;
+    float pad2;
+};
+
+struct Sphere {
+    vec4 pos;
+    float radius;
+    Material mat;
 };
 
 layout(std430, binding=2) buffer sphere_list
@@ -53,7 +61,8 @@ bool IntersectSphere(in const Ray r, const in Sphere s, out float tmin, out floa
     tmax = -1;
     vec3 OC = r.pos - s.pos.xyz;
     float b = 2*dot(r.dir, OC);
-    float c = dot(OC, OC) - s.e.z*s.e.z;
+    // float c = dot(OC, OC) - s.e.z*s.e.z;
+    float c = dot(OC, OC) - s.radius*s.radius;
     float disc = b*b - 4*c;
     if (disc < 0)
         return false;
@@ -116,10 +125,10 @@ void main() {
         Ray shadow = Ray(hit_p + 0.01*l, l);
         if (!IntersectSphere(shadow, hit_sphere, tmin, tmax)) {
             vec3 ret = vec3(0, 0, 0);
-            ret += hit_sphere.ka.xyz * ambient_light;
-            ret += hit_sphere.kd.xyz * directional_light_color * max(0.0, dot(n, l));
-            float specular = pow(max(dot(v, reflect(l, n)), 0), hit_sphere.e.x);
-            ret += hit_sphere.ks.xyz * directional_light_color * specular;
+            ret += hit_sphere.mat.ka.xyz * ambient_light;
+            ret += hit_sphere.mat.kd.xyz * directional_light_color * max(0.0, dot(n, l));
+            float specular = pow(max(dot(v, reflect(l, n)), 0), hit_sphere.mat.power);
+            ret += hit_sphere.mat.ks.xyz * directional_light_color * specular;
 
             pixel = vec4(ret, 1);
         } else {

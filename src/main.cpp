@@ -8,6 +8,7 @@ int SH = 800;
 Camera camera;
 typedef struct shader_data_t {
     vec4 pos;
+    float r; vec3 pad;
     vec4 ka;
     vec4 kd;
     vec4 ks;
@@ -125,19 +126,22 @@ int main() {
     GLuint ssbo = 0;
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    shader_data arr[parser.spheres_.size()];
-    for (int i = 0; i < parser.spheres_.size(); i++) {
-        Sphere s = parser.spheres_[i];
-        arr[i].pos = vec4(s.pos, 0);
-        arr[i].ka = vec4(s.mat.ka, 0);
-        arr[i].kd = vec4(s.mat.kd, 0);
-        arr[i].ks = vec4(s.mat.ks, 0);
-        arr[i].kt = vec4(s.mat.kt, 0);
-        arr[i].e = vec4(s.mat.power, s.mat.ior, s.radius, 0);
-    }
-    cout << "arr size: " << sizeof(arr) << endl;
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(arr), arr, GL_DYNAMIC_COPY);
-    // glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser.spheres_.size(), &parser.spheres_[0], GL_DYNAMIC_COPY);
+    // shader_data arr[parser.spheres_.size()];
+    // for (int i = 0; i < parser.spheres_.size(); i++) {
+    //     Sphere s = parser.spheres_[i];
+    //     arr[i].pos = vec4(s.pos, 0);
+    //     arr[i].r = s.radius;
+    //     arr[i].ka = vec4(s.mat.ka, 0);
+    //     arr[i].kd = vec4(s.mat.kd, 0);
+    //     arr[i].ks = vec4(s.mat.ks, 0);
+    //     arr[i].kt = vec4(s.mat.kt, 0);
+    //     arr[i].e = vec4(s.mat.power, s.mat.ior, 0, 0);
+    // }
+    // cout << "arr size: " << sizeof(arr) << endl;
+    // glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(arr), arr, GL_DYNAMIC_COPY);
+    cout << "sphere size: " << sizeof(Sphere) << endl;
+    cout << "mat size: " << sizeof(Material) << endl;
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser.spheres_.size(), &parser.spheres_[0], GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glUniform1i(glGetUniformLocation(compute_program, "num_spheres"), parser.spheres_.size());

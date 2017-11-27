@@ -17,9 +17,9 @@ typedef struct Sphere {
         mat = m;
     }
 
-    vec3 pos; float pad;
-    Material mat;
+    vec3 pos; float pad1;
     float radius; vec3 pad2;
+    Material mat;
 
 } Sphere;
 
