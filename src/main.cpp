@@ -6,6 +6,14 @@ int SW = 800;
 int SH = 800;
 
 Camera camera;
+float dist_to_plane;
+vec3 camera_vel = vec3(0, 0, 0);
+vec3 camera_rot = vec3(0, 0, 0);
+vec3 rotated_camera_dir;
+vec3 rotated_camera_up;
+vec3 rotated_dx;
+vec3 rotated_dy;
+float speed = 150;
 
 const float verts[] = {
     -1, 1, 0,
@@ -93,17 +101,21 @@ int main() {
     glEnableVertexAttribArray(texAttrib);
     glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
+    glUseProgram(compute_program);
     camera = parser.camera;
     // distance from the camera to the 'plane' we are drawing on
-    float d = SH / (2 * tan(camera.height_fov / 2));
+    dist_to_plane = SH / (2 * tan(camera.height_fov / 2));
     // Middle of the plane
-    vec3 mid = camera.pos + d * camera.dir;
+    vec3 mid = camera.pos + dist_to_plane * camera.dir;
     // Distance of one pixel on the X axis on the plane
     vec3 dx = normalize(cross(camera.up, camera.dir));
     // Distance of one pixel on the Y axis on the plane
     vec3 dy = -camera.up;
     // Position of the upper left pixel on the plane
     vec3 ul = mid - .5*(SW - 1)*dx - .5*(SH - 1)*dy;
+    rotated_dx = dx;
+    rotated_dy = dy;
+    rotated_camera_dir = camera.dir;
 
     // Send the camera info to the compute shader
     glUseProgram(compute_program);
@@ -146,7 +158,9 @@ int main() {
     glUniform4fv(glGetUniformLocation(compute_program, "background_color"),
                  1, &parser.background_color[0]);
 
+    SDL_SetRelativeMouseMode(SDL_TRUE);
     unsigned int lastTime = SDL_GetTicks();
+    unsigned int fpsTime = lastTime;
     unsigned int currentTime;
     SDL_Event e;
     bool quit = false;
@@ -155,14 +169,56 @@ int main() {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT)
                 quit = true;
-            if (e.type == SDL_KEYDOWN) {
+            if (e.type == SDL_KEYDOWN && e.key.repeat == 0) {
                 switch(e.key.keysym.sym) {
-                    case SDLK_c:
+                    case SDLK_a:
+                        camera_vel.x = -1;
+                        break;
+                    case SDLK_d:
+                        camera_vel.x = 1;
+                        break;
+                    case SDLK_s:
+                        camera_vel.z = -1;
+                        break;
+                    case SDLK_w:
+                        camera_vel.z = 1;
                         break;
                 }
+            } else if (e.type == SDL_KEYUP) {
+                if (e.key.keysym.sym == SDLK_a || e.key.keysym.sym == SDLK_d)
+                    camera_vel.x = 0;
+                else if (e.key.keysym.sym == SDLK_w || e.key.keysym.sym == SDLK_s)
+                    camera_vel.z = 0;
+            } else if (e.type == SDL_MOUSEMOTION) {
+                float x = e.motion.xrel;
+                float y = e.motion.yrel;
+                x = radians(x) / 4;
+                y = radians(y) / 4;
+                camera_rot.x = fmin(radians(80.0f), fmax(radians(-80.0f), camera_rot.x + y));
+                camera_rot.y += x;
+                mat4 r(1.0f);
+                r = rotate(r, camera_rot.y, vec3(0, 1, 0));
+                r = rotate(r, camera_rot.x, vec3(1, 0, 0));
+                rotated_camera_dir = vec3(r*vec4(camera.dir, 0));
+                rotated_camera_up = vec3(r*vec4(camera.up, 0));
+                rotated_dx = cross(rotated_camera_up, rotated_camera_dir);
+                rotated_dy = -rotated_camera_up;
+                ul = camera.pos + dist_to_plane * rotated_camera_dir
+                     - .5*(SW - 1)*rotated_dx - .5*(SH - 1)*rotated_dy;
+                glUseProgram(compute_program);
+                glUniform3fv(glGetUniformLocation(compute_program, "camera_dx"), 1, &rotated_dx[0]);
+                glUniform3fv(glGetUniformLocation(compute_program, "camera_dy"), 1, &rotated_dy[0]);
             }
         }
+        // update shit
+        currentTime = SDL_GetTicks();
+        float dt = (currentTime - lastTime) / 1000.0f;
+        vec3 inc = speed * dt * (camera_vel.z*rotated_camera_dir + camera_vel.x*rotated_dx);
+        camera.pos += inc;
+        ul += inc;
         glUseProgram(compute_program);
+        glUniform3fv(glGetUniformLocation(compute_program, "camera_pos"), 1, &camera.pos[0]);
+        glUniform3fv(glGetUniformLocation(compute_program, "camera_ul"), 1, &ul[0]);
         glDispatchCompute((GLuint)SW, (GLuint)SH, 1);
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -175,10 +231,10 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         SDL_GL_SwapWindow(window);
         frameCounter++;
-        currentTime = SDL_GetTicks();
-        if (currentTime > lastTime + 1000) {
+        lastTime = currentTime;
+        if (currentTime > fpsTime + 1000) {
             cout << "FPS: " << frameCounter << endl;
-            lastTime = currentTime;
+            fpsTime = currentTime;
             frameCounter = 0;
         }
     }
