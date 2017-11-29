@@ -1,5 +1,6 @@
 #include "include/utils.h"
 #include "include/parser.h"
+#include <iomanip>
 
 // Screen width / height (scene file overwrites these values)
 int SW = 800;
@@ -14,6 +15,21 @@ vec3 rotated_camera_up;
 vec3 rotated_dx;
 vec3 rotated_dy;
 float speed = 150;
+
+ostream& operator << (ostream& out, const mat4& m) {
+    for (int c = 0; c < 4; c++) {
+        for (int r = 0; r < 4; r++) {
+            out << setw(6) <<  m[r][c] << " ";
+        }
+        out << endl;
+    }
+    return out;
+}
+
+ostream& operator << (ostream& out, const vec4& v) {
+    return out << v.x << " " << v.y << " " << v.z << " " << v.w << endl;
+} 
+
 
 const float verts[] = {
     -1, 1, 0,
@@ -101,28 +117,75 @@ int main() {
     glEnableVertexAttribArray(texAttrib);
     glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
+    // try making d = 1
     glUseProgram(compute_program);
     camera = parser.camera;
     // distance from the camera to the 'plane' we are drawing on
     dist_to_plane = SH / (2 * tan(camera.height_fov / 2));
+    cout << "screen height: " << SH << ", screen width: " << SW << endl;
+    cout << "dist: " << dist_to_plane << endl;
     // Middle of the plane
     vec3 mid = camera.pos + dist_to_plane * camera.dir;
     // Distance of one pixel on the X axis on the plane
-    vec3 dx = normalize(cross(camera.up, camera.dir));
+    vec3 dx = normalize(cross(camera.dir, camera.up));
     // Distance of one pixel on the Y axis on the plane
     vec3 dy = -camera.up;
     // Position of the upper left pixel on the plane
     vec3 ul = mid - .5*(SW - 1)*dx - .5*(SH - 1)*dy;
+    vec3 rd = mid + .5*(SW - 1)*dx + .5*(SH - 1)*dy;
+    cout << "dx: " << dx << endl;
+    cout << "dy: " << dy << endl;
     rotated_dx = dx;
     rotated_dy = dy;
     rotated_camera_dir = camera.dir;
+    rotated_camera_up = camera.up;
+    glUseProgram(compute_program);
+    ivec2 ss(SW, SH);
+    glUniform2iv(glGetUniformLocation(compute_program, "img_size"), 1, &ss[0]);
+    // glUniform3fv(glGetUniformLocation(compute_program, "camera_pos"), 1, &camera.pos[0]);
+    // glUniform3fv(glGetUniformLocation(compute_program, "camera_dx"), 1, &dx[0]);
+    // glUniform3fv(glGetUniformLocation(compute_program, "camera_dy"), 1, &dy[0]);
+    // glUniform3fv(glGetUniformLocation(compute_program, "camera_ul"), 1, &ul[0]);
+
+    // calculate a ray based on the view and projection matrices
+    mat4 view = lookAt(
+            camera.pos,
+            camera.pos + camera.dir,
+            camera.up);
+    // cout << view * vec4(ul, 1) << endl;
+    mat4 proj = perspective((camera.height_fov), (float)SW / SH, .1f, 400.0f);
+    // mat4 proj = perspective(radians(camera.height_fov), (float)SW / SH, .1f, 400.0f);
+    cout << "view matrix: " << endl << view << endl;
+    cout << "proj matrix: " << endl << proj << endl;
 
     // Send the camera info to the compute shader
-    glUseProgram(compute_program);
-    glUniform3fv(glGetUniformLocation(compute_program, "camera_pos"), 1, &camera.pos[0]);
-    glUniform3fv(glGetUniformLocation(compute_program, "camera_dx"), 1, &dx[0]);
-    glUniform3fv(glGetUniformLocation(compute_program, "camera_dy"), 1, &dy[0]);
-    glUniform3fv(glGetUniformLocation(compute_program, "camera_ul"), 1, &ul[0]);
+    mat4 mvpInverse = inverse(proj*view);
+    // float x = -.5*(SW - 1);
+    // float y = .5*(SH - 1);
+    float x = -1 + ((0.0 + 0.5) / SW) * 2;
+    float y = 1 -  ((0.0 + 0.5) / SH) * 2;
+    vec3 o = vec3(inverse(view)* vec4(0, 0, 0, 1));
+    vec4 inv = mvpInverse * vec4(x, y, -1, 1);
+    vec4 inv2 = mvpInverse * vec4(x, y, 1, 1);
+    cout << "inv: " << inv  << endl;
+    vec3 dir = normalize(vec3(inv2 / inv2.w) - o);
+    cout << "actual ray: " << normalize(ul - camera.pos) << endl;
+    cout << "new    ray: " << dir << endl;
+    x = -1 + ((SW - 0.5) / SW) * 2;
+    y = 1 -  ((SH - 0.5) / SH) * 2;
+    o = vec3(inverse(view)* vec4(0, 0, 0, 1));
+    inv = mvpInverse * vec4(x, y, -1, 1);
+    inv2 = mvpInverse * vec4(x, y, 1, 1);
+    cout << "inv: " << inv  << endl;
+    dir = normalize(vec3(inv2 / inv2.w) - o);
+    cout << "actual ray: " << normalize(rd - camera.pos) << endl;
+    cout << "new    ray: " << dir << endl;
+    cout << "origin: " << o << endl;
+    cout << "upper left corner: " << ul << endl;
+    cout << "lower right corner: " << rd << endl;
+    vec4 transUL = proj*view*vec4(ul, 1);
+    glUniformMatrix4fv(glGetUniformLocation(compute_program, "mvpInv"), 1, GL_FALSE, &mvpInverse[0][0]);
+
 
     // Send spheres to the GPU
     glUseProgram(compute_program);
@@ -192,8 +255,8 @@ int main() {
             } else if (e.type == SDL_MOUSEMOTION) {
                 float x = e.motion.xrel;
                 float y = e.motion.yrel;
-                x = radians(x) / 4;
-                y = radians(y) / 4;
+                x = -radians(x) / 4;
+                y = -radians(y) / 4;
                 camera_rot.x = fmin(radians(80.0f), fmax(radians(-80.0f), camera_rot.x + y));
                 camera_rot.y += x;
                 mat4 r(1.0f);
@@ -201,13 +264,17 @@ int main() {
                 r = rotate(r, camera_rot.x, vec3(1, 0, 0));
                 rotated_camera_dir = vec3(r*vec4(camera.dir, 0));
                 rotated_camera_up = vec3(r*vec4(camera.up, 0));
-                rotated_dx = cross(rotated_camera_up, rotated_camera_dir);
+                rotated_dx = cross(rotated_camera_dir, rotated_camera_up);
                 rotated_dy = -rotated_camera_up;
                 ul = camera.pos + dist_to_plane * rotated_camera_dir
                      - .5*(SW - 1)*rotated_dx - .5*(SH - 1)*rotated_dy;
-                glUseProgram(compute_program);
-                glUniform3fv(glGetUniformLocation(compute_program, "camera_dx"), 1, &rotated_dx[0]);
-                glUniform3fv(glGetUniformLocation(compute_program, "camera_dy"), 1, &rotated_dy[0]);
+                // glUseProgram(compute_program);
+                // glUniform3fv(glGetUniformLocation(compute_program, "camera_dx"), 1, &rotated_dx[0]);
+                // glUniform3fv(glGetUniformLocation(compute_program, "camera_dy"), 1, &rotated_dy[0]);
+                view = lookAt(
+                        camera.pos,
+                        camera.pos + rotated_camera_dir,
+                        rotated_camera_up);
             }
         }
         // update shit
@@ -219,6 +286,12 @@ int main() {
         glUseProgram(compute_program);
         glUniform3fv(glGetUniformLocation(compute_program, "camera_pos"), 1, &camera.pos[0]);
         glUniform3fv(glGetUniformLocation(compute_program, "camera_ul"), 1, &ul[0]);
+        view = lookAt(
+                camera.pos,
+                camera.pos + rotated_camera_dir,
+                rotated_camera_up);
+        mvpInverse = inverse(proj*view);
+        glUniformMatrix4fv(glGetUniformLocation(compute_program, "mvpInv"), 1, GL_FALSE, &mvpInverse[0][0]);
         glDispatchCompute((GLuint)SW, (GLuint)SH, 1);
 
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

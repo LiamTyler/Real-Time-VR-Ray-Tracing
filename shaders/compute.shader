@@ -2,6 +2,7 @@
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f, binding = 0) uniform image2D img_output;
 
+uniform ivec2 img_size;
 uniform vec3 camera_pos;
 uniform vec3 camera_dx;
 uniform vec3 camera_dy;
@@ -10,6 +11,7 @@ uniform int num_spheres;
 uniform int num_dir_lights;
 uniform int num_point_lights;
 uniform vec4 background_color;
+uniform mat4 mvpInv;
 
 uniform vec3 ambient_light;
 
@@ -117,8 +119,15 @@ bool Intersect(in const Ray r, out int hit_index, out float tmin, out float tmax
 void main() {
     vec4 pixel = background_color;
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
-    vec3 plane_pos = camera_ul + coords.x * camera_dx + coords.y * camera_dy;
-    ray = Ray(camera_pos, normalize(plane_pos - camera_pos));
+    // vec3 plane_pos = camera_ul + coords.x * camera_dx + coords.y * camera_dy;
+    float x = -1 + ((coords.x + 0.5) / img_size.x) * 2;
+    float y = 1 - ((coords.y + 0.5) / img_size.y) * 2;
+    vec3 o = camera_pos;
+    vec4 inv1 = mvpInv * vec4(x, y, -1, 1);
+    vec4 inv2 = mvpInv * vec4(x, y, 1, 1);
+
+    // ray = Ray(camera_pos, normalize(plane_pos - camera_pos));
+    ray = Ray(o, normalize((inv2 / inv2.w).xyz - o));
 
     float tmin, tmax;
     int hit_sphere_index = -1;
