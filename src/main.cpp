@@ -51,7 +51,8 @@ const float uv[] = {
 
 int main() {
     // Parse the scene file
-    Parser parser("scenes/single_sphere_dir.scn");
+
+    Parser parser("scenes/test_scene.scn");
     if (!parser.Parse()) {
         cout << "Could not parse scene" << endl;
         return 1;
@@ -96,7 +97,6 @@ int main() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SW, SH, 0, GL_RGBA, GL_FLOAT, NULL);
     glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
