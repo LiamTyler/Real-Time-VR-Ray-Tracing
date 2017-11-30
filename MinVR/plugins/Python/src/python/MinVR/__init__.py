@@ -1,1 +1,0 @@
-from MinVR import *
