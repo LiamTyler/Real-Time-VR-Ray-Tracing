@@ -37,7 +37,7 @@ bool Parser::Parse() {
             in >> up;
             float ha;
             in >> ha;
-            ha = ha * 2 * M_PI / 180;
+            ha = radians(ha * 2);
             camera = Camera(pos, dir, up, ha);
         } else if (command == "film_resolution") {
             int w, h;

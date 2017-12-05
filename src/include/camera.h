@@ -8,7 +8,7 @@ typedef struct Camera {
         pos = vec3(0, 0, 0);
         dir = vec3(0, 0, 1);
         up = vec3(0, 1, 0);
-        height_fov = 90 * M_PI / 180;
+        height_fov = radians(90.0f);
     }
 
     Camera(vec3 p, vec3 d, vec3 u, float f) {

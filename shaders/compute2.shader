@@ -123,7 +123,8 @@ void main() {
     // vec3 plane_pos = camera_ul + coords.x * camera_dx + coords.y * camera_dy;
     float x = -1 + ((coords.x + 0.5) / img_size.x) * 2;
     float y = 1 - ((coords.y + 0.5) / img_size.y) * 2;
-    vec3 o = camera_pos;
+    vec3 o = (inverse(view) * vec4(0, 0, 0, 1)).xyz;
+    //vec3 o = vec3(0,0,0);
     mat4 mvpInv = inverse(proj * view);
     vec4 inv1 = mvpInv * vec4(x, y, -1, 1);
     vec4 inv2 = mvpInv * vec4(x, y, 1, 1);
