@@ -9,9 +9,15 @@ class RayTracer {
     public:
         RayTracer();
         ~RayTracer();
-        bool ParseEvent(const VREvent & event);
+        bool ParseEvent(Event& name);
         void SetUp();
-        void Render(const VRGraphicsState &renderState);
+        void Render(mat4& view, mat4& proj);
+        vec3 getCameraPos() { return camera_.pos; }
+        vec3 getCameraDir() { return camera_.dir; }
+        vec3 getCameraUp() { return camera_.up; }
+        float getFov() { return camera_.height_fov; }
+        float getAspectRatio() { return (float) SW_ / SH_; }
+        void setCurrentTime(float t) { currentTime_ = t; }
 
     private:
         GLuint quad_vao_;
@@ -29,6 +35,7 @@ class RayTracer {
         int SH_;
         Parser parser_;
         Camera camera_;
+        mat4 model_;
         float dist_to_plane_;
         vec3 camera_vel_;
         vec3 camera_rot_;

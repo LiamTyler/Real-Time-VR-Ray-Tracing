@@ -1,32 +1,11 @@
 #ifndef SRC_INCLUDE_UTILS_H_
 #define SRC_INCLUDE_UTILS_H_
 
-#include "GL/glew.h"
-#ifdef _WIN32
-#include "GL/wglew.h"
-#elif (!defined(__APPLE__))
-#include "GL/glxew.h"
-#endif
-
-// OpenGL Headers
-#if defined(WIN32)
-#define NOMINMAX
-#include <windows.h>
-#include <GL/gl.h>
-#elif defined(__APPLE__)
-#define GL_GLEXT_PROTOTYPES
-#include <OpenGL/gl3.h>
-#include <OpenGL/glext.h>
-#else
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#endif
-
-// MinVR header
-#include <api/MinVR.h>
-
-#include "glm/glm.hpp"
-#include "glm/ext.hpp"
+#include <GL/glew.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -34,9 +13,21 @@
 #include <cmath>
 #include <vector>
 
-using namespace MinVR;
 using namespace glm;
 using namespace std;
+
+enum Event {
+    NO_EVENT = 0,
+    QUIT,
+    L_LEFT_DOWN,
+    L_RIGHT_DOWN,
+    L_UP_DOWN,
+    L_DOWN_DOWN,
+    L_LEFT_UP,
+    L_RIGHT_UP,
+    L_UP_UP,
+    L_DOWN_UP,
+};
 
 inline ostream& operator <<(ostream& out, const vec3& v) {
     out << v.x << " " << v.y << " " << v.z;
@@ -48,7 +39,6 @@ inline istream& operator >>(istream& in, vec3& v) {
     return in;
 }
 
-/*
 inline SDL_Window* InitAndWindow(string title, int ox, int oy, int w, int h) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         cout << "Failed to init SDL" << endl;
@@ -82,7 +72,6 @@ inline SDL_Window* InitAndWindow(string title, int ox, int oy, int w, int h) {
 
     return window;
 }
-*/
 
 inline GLuint LoadComputeShader(string compute_shader_path) {
     ifstream in(compute_shader_path);
