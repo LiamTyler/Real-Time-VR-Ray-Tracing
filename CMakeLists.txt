@@ -16,9 +16,9 @@ file(GLOB SRC_FILES src/*.cpp)
 include_directories(
 	ext/
 	src/
-	${MinVR_INCLUDE_DIR}
+	#${MinVR_INCLUDE_DIR}
 )
-message(${MinVR_INCLUDE_DIR})
+
 include_directories(src/)
 include_directories(ext/)
 include_directories(${CMAKE_SOURCE_DIR}/ext/MinVR/src/MinVR/src/)
@@ -30,13 +30,20 @@ endif()
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT)
-find_package(MinVR REQUIRED)
+#find_package(MinVR REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
+add_dependencies(${PROJECT_NAME} MinVR)
 
+#${MinVR_LIBRARIES}
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	set(LIB_FILE ${CMAKE_SOURCE_DIR}/ext/MinVR/src/MinVR/build/install/lib/libMinVR.a)
+else()
+	set(LIB_FILE ${CMAKE_SOURCE_DIR}/ext/MinVR/src/MinVR/build/install/lib/MinVR.lib)
+endif()
 target_link_libraries(
     ${PROJECT_NAME}
-	${MinVR_LIBRARIES}
+	${LIB_FILE}
     ${OPENGL_gl_LIBRARY}
     ${GLUT_LIBRARIES}
 	${CMAKE_DL_LIBS}
