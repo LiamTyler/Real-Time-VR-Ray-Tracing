@@ -1,7 +1,7 @@
 #film_resolution 400 400
 background 1 1 1 
 
-camera 0 0 -1  0 0 -1   0 1 0   45
+camera 0 0 10  0 0 -1   0 1 0   45
 
 ambient_light .1 .1 .1
 # point_light  32000 32000 32000   0 0 0

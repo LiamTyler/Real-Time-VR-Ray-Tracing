@@ -38,8 +38,43 @@ using namespace MinVR;
 using namespace glm;
 using namespace std;
 
+enum Event {
+    NO_EVENT = 0,
+    QUIT,
+    L_LEFT_DOWN,
+    L_RIGHT_DOWN,
+    L_FORWARDS_DOWN,
+    L_BACKWARDS_DOWN,
+    L_UP_DOWN,
+    L_DOWN_DOWN,
+    L_LEFT_UP,
+    L_RIGHT_UP,
+    L_FORWARDS_UP,
+    L_BACKWARDS_UP,
+    L_UP_UP,
+    L_DOWN_UP,
+    R_LEFT_DOWN,
+    R_RIGHT_DOWN,
+    R_FORWARDS_DOWN,
+    R_BACKWARDS_DOWN,
+    R_LEFT_UP,
+    R_RIGHT_UP,
+    R_FORWARDS_UP,
+    R_BACKWARDS_UP,
+};
+
 inline ostream& operator <<(ostream& out, const vec3& v) {
     out << v.x << " " << v.y << " " << v.z;
+    return out;
+}
+
+inline ostream& operator <<(ostream& out, const mat4& m) {
+    for (int c = 0; c < 4; c++) {
+        for (int r = 0; r < 4; r++) {
+            out << m[r][c] << " ";
+        }
+        out << endl;
+    }
     return out;
 }
 

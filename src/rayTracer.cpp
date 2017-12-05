@@ -4,8 +4,9 @@
 RayTracer::RayTracer() {
     camera_vel_ = vec3(0, 0, 0);
     camera_rot_ = vec3(0, 0, 0);
-    speed_ = 150;
+    speed_ = 50;
     fpsTime_ = currentTime_ = lastTime_ = 0;
+    model_ = mat4(1.0f);
 }
 
 RayTracer::~RayTracer() {
@@ -16,34 +17,64 @@ RayTracer::~RayTracer() {
     glDeleteProgram(render_program_);
 }
 
-bool RayTracer::ParseEvent(const VREvent &event) {
-    bool shutdown = false;
-    if (event.getName() == "FrameStart") {
-        currentTime_ = event.getDataAsFloat("ElapsedSeconds");
-    } else {
-        string name = event.getName();
-        bool down = name[name.find('_') + 1] == 'D';
-        if (down) {
-            if (name == "KbdEsc_Down") {
-                shutdown = true;
-            } else if (name == "KbdW_Down") {
-                camera_vel_.z = 1;
-            } else if (name == "KbdS_Down") {
-                camera_vel_.z = -1;
-            } else if (name == "KbdA_Down") {
-                camera_vel_.x = -1;
-            } else if (name == "KbdD_Down") {
-                camera_vel_.x = 1;
-            }
-        } else {
-            if (name == "KbdW_Up" || name == "KbdS_Up") {
-                camera_vel_.z = 0;
-            } else if (name == "KbdA_Up" || name == "KbdD_Up") {
-                camera_vel_.x = 0;
-            }
-        }
+bool RayTracer::ParseEvent(Event& ename) {
+    switch(ename) {
+        case QUIT:
+            return true;
+            break;
+        case L_FORWARDS_DOWN:
+            camera_vel_.z = 1;
+            break;
+        case L_BACKWARDS_DOWN:
+            camera_vel_.z = -1;
+            break;
+        case L_LEFT_DOWN:
+            camera_vel_.x = -1;
+            break;
+        case L_RIGHT_DOWN:
+            camera_vel_.x = 1;
+            break;
+        case L_UP_DOWN:
+            camera_vel_.y = 1;
+            break;
+        case L_DOWN_DOWN:
+            camera_vel_.y = -1;
+            break;
+        case L_FORWARDS_UP:
+        case L_BACKWARDS_UP:
+            camera_vel_.z = 0;
+            break;
+        case L_LEFT_UP:
+        case L_RIGHT_UP:
+            camera_vel_.x = 0;
+            break;
+        case L_UP_UP:
+        case L_DOWN_UP:
+            camera_vel_.y = 0;
+            break;
+        case R_FORWARDS_DOWN:
+            camera_rot_.x = radians(1.0f);
+            break;
+        case R_BACKWARDS_DOWN:
+            camera_rot_.x = radians(-1.0f);
+            break;
+        case R_LEFT_DOWN:
+            camera_rot_.y = radians(1.0f);
+            break;
+        case R_RIGHT_DOWN:
+            camera_rot_.y = radians(-1.0f);
+            break;
+        case R_FORWARDS_UP:
+        case R_BACKWARDS_UP:
+            camera_rot_.x = 0;
+            break;
+        case R_LEFT_UP:
+        case R_RIGHT_UP:
+            camera_rot_.y = 0;
+            break;
     }
-    return shutdown;
+        
+    return false;
 }
 
 void RayTracer::SetUp() {
@@ -142,6 +173,7 @@ void RayTracer::SetUp() {
     glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     camera_ = parser_.camera;
+    model_ = translate(model_, camera_.pos);
     vec3 dx = normalize(cross(camera_.dir, camera_.up));
     vec3 dy = -camera_.up;
     rotated_dx_ = dx;
@@ -186,12 +218,28 @@ void RayTracer::SetUp() {
 
 }
 
-void RayTracer::Render(const VRGraphicsState &renderState) {
+void RayTracer::Render(mat4 &view, mat4 &proj) {
+    // update model matrix
+    float dt = currentTime_ - lastTime_;
+    dt *= speed_;
+    model_ = rotate(model_, dt * camera_rot_.y, vec3(0, 1, 0));
+    model_ = rotate(model_, dt * camera_rot_.x, vec3(1, 0, 0));
+    model_ = translate(model_, dt * camera_vel_);
+    // view = model_ * view;
+    view = view * inverse(model_);
+    // keep track of FPS
+    frameCounter_++;
+    lastTime_ = currentTime_;
+    if (currentTime_ > fpsTime_ + 1) {
+        cout << "FPS: " << frameCounter_ << endl;
+        fpsTime_ = currentTime_;
+        frameCounter_ = 0;
+    }
     glUseProgram(compute_program_);
     GLint loc = glGetUniformLocation(compute_program_, "proj");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, renderState.getProjectionMatrix());
+    glUniformMatrix4fv(loc, 1, GL_FALSE, &proj[0][0]);
     loc = glGetUniformLocation(compute_program_, "view");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, renderState.getViewMatrix());
+    glUniformMatrix4fv(loc, 1, GL_FALSE, &view[0][0]);
 
     glDispatchCompute((GLuint)SW_, (GLuint)SH_, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -203,12 +251,5 @@ void RayTracer::Render(const VRGraphicsState &renderState) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex_output_);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    frameCounter_++;
-    lastTime_ = currentTime_;
-    if (currentTime_ > fpsTime_ + 1) {
-        cout << "FPS: " << frameCounter_ << endl;
-        fpsTime_ = currentTime_;
-        frameCounter_ = 0;
-    }
     glUseProgram(0);
 }
