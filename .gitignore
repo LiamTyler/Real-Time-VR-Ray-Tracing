@@ -1,6 +1,7 @@
 build/
 ext/MinVR/
 *.swp
+src/include/config.h
 
 # Prerequisites
 *.d
