@@ -2,17 +2,18 @@
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f, binding = 0) uniform image2D img_output;
 
+#define NUM_SPHERES @
+#define NUM_POINT_LIGHTS @
+#define NUM_DIR_LIGHTS @
+
 uniform ivec2 img_size;
 uniform vec3 camera_pos;
 uniform vec3 camera_dx;
 uniform vec3 camera_dy;
 uniform vec3 camera_ul;
-uniform int num_spheres;
-uniform int num_dir_lights;
-uniform int num_point_lights;
 uniform vec4 background_color;
-uniform mat4 proj;
-uniform mat4 view;
+
+uniform mat4 invProjView;
 
 uniform vec3 ambient_light;
 
@@ -64,52 +65,33 @@ layout(std430, binding=4) buffer point_light_list
     PointLight point_lights[];
 };
 
-bool IntersectSphere(in const Ray r, const in Sphere s, out float tmin, out float tmax) {
-    // find if ray hit the sphere
-    tmin = -1;
-    tmax = -1;
+bool IntersectSphere(in const Ray r, const in Sphere s, out float t) {
     vec3 OC = r.pos - s.pos.xyz;
-    float b = 2*dot(r.dir, OC);
-    // float c = dot(OC, OC) - s.e.z*s.e.z;
+    float b = dot(r.dir, OC);
     float c = dot(OC, OC) - s.radius*s.radius;
-    float disc = b*b - 4*c;
+    float disc = b*b - c;
     if (disc < 0)
         return false;
 
     float sdisc = sqrt(disc);
-    tmin = .5 * (-b + sdisc);
-    tmax = .5 * (-b - sdisc);
-    if (tmin > tmax) {
-        float tmp = tmin;
-        tmin = tmax;
-        tmax = tmp;
-    }
-    if (tmax < 0)
+    t = -b - sdisc;
+    if (t < 0)
         return false;
-
-    if (tmin < 0)
-        tmin = tmax;
 
     return true;
 }
 
-bool Intersect(in const Ray r, out int hit_index, out float tmin, out float tmax) {
+bool Intersect(in const Ray r, out int hit_index, out float t) {
     int lowest_hit_index = -1;
+    t = 999999;
     bool hit = false;
-    for (int i = 0; i < num_spheres; i++) {
-        float tmin0, tmax0;
-        if (IntersectSphere(r, spheres[i], tmin0, tmax0)) {
-            if (!hit) {
+    for (int i = 0; i < NUM_SPHERES; i++) {
+        float tmp_t;
+        if (IntersectSphere(r, spheres[i], tmp_t)) {
+            if (tmp_t < t) {
+                t = tmp_t;
                 lowest_hit_index = i;
-                tmin = tmin0;
-                tmax = tmax0;
                 hit = true;
-            } else {
-                if (tmin > tmin0) {
-                    tmin = tmin0;
-                    tmax = tmax0;
-                    lowest_hit_index = i;
-                }
             }
         }
     }
@@ -120,33 +102,31 @@ bool Intersect(in const Ray r, out int hit_index, out float tmin, out float tmax
 void main() {
     vec4 pixel = background_color;
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
-    // vec3 plane_pos = camera_ul + coords.x * camera_dx + coords.y * camera_dy;
     float x = -1 + ((coords.x + 0.5) / img_size.x) * 2;
-    float y = 1 - ((coords.y + 0.5) / img_size.y) * 2;
-    vec3 o = (inverse(view) * vec4(0, 0, 0, 1)).xyz;
-    //vec3 o = vec3(0,0,0);
-    mat4 mvpInv = inverse(proj * view);
-    vec4 inv1 = mvpInv * vec4(x, y, -1, 1);
-    vec4 inv2 = mvpInv * vec4(x, y, 1, 1);
+    float y =  1 - ((coords.y + 0.5) / img_size.y) * 2;
 
-    // ray = Ray(camera_pos, normalize(plane_pos - camera_pos));
-    ray = Ray(o, normalize((inv2 / inv2.w).xyz - o));
+    vec3 o = camera_pos; 
+    vec4 dir = invProjView * vec4(x, y, 1, 1);
 
-    float tmin, tmax;
+    ray = Ray(o, normalize((dir / dir.w).xyz - o));
+
+    float t;
     int hit_sphere_index = -1;
-    if (Intersect(ray, hit_sphere_index, tmin, tmax)) {
+    if (Intersect(ray, hit_sphere_index, t)) {
         Sphere hit_sphere = spheres[hit_sphere_index];
-        vec3 hit_p = ray.pos + tmin*ray.dir;
+        vec3 hit_p = ray.pos + t*ray.dir;
         vec3 n = normalize(hit_p - hit_sphere.pos.xyz);
         vec3 v = ray.dir;
         vec3 ret = vec3(0, 0, 0);
+
         // Add Ambient Light
         ret += hit_sphere.mat.ka.xyz * ambient_light;
+
         // Add directional Lights
-        for (int i = 0; i < num_dir_lights; ++i) {
+        for (int i = 0; i < NUM_DIR_LIGHTS; ++i) {
             vec3 l = -dir_lights[i].dir.xyz;
             Ray shadow = Ray(hit_p + 0.01*l, l);
-            if (!Intersect(shadow, hit_sphere_index, tmin, tmax)) {
+            if (!Intersect(shadow, hit_sphere_index, t)) {
                 ret += hit_sphere.mat.kd.xyz * dir_lights[i].color.xyz * max(0.0, dot(n, l));
                 float specular = pow(max(dot(v, reflect(l, n)), 0), hit_sphere.mat.power);
                 ret += hit_sphere.mat.ks.xyz * dir_lights[i].color.xyz * specular;
@@ -154,13 +134,14 @@ void main() {
                 pixel = vec4(0, 0, 0, 1);
             }
         }
+
         // Add point lights
-        for (int i = 0; i < num_point_lights; ++i) {
+        for (int i = 0; i < NUM_POINT_LIGHTS; ++i) {
             vec3 l = point_lights[i].pos.xyz - hit_p;
             float d = length(l);
             l = normalize(l);
             Ray shadow = Ray(hit_p + 0.01*l, l);
-            if (!Intersect(shadow, hit_sphere_index, tmin, tmax) || length(tmin*shadow.dir) >= d) {
+            if (!Intersect(shadow, hit_sphere_index, t) || length(t*shadow.dir) >= d) {
                 vec3 I = (1.0 / (d*d)) * point_lights[i].color.xyz;
                 ret += I* hit_sphere.mat.kd.xyz * max(0.0, dot(n, l));
                 float specular = pow(max(dot(v, reflect(l, n)), 0), hit_sphere.mat.power);

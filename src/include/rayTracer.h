@@ -10,6 +10,7 @@ class RayTracer {
         RayTracer();
         ~RayTracer();
         bool ParseEvent(Event& name);
+        void EditShader(string in_file, string out_file);
         void SetUp();
         void Render(mat4& view, mat4& proj);
         vec3 getCameraPos() { return camera_.pos; }

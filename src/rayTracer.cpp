@@ -17,6 +17,40 @@ RayTracer::~RayTracer() {
     glDeleteProgram(render_program_);
 }
 
+void RayTracer::EditShader(string in_file, string out_file) {
+    ifstream in(in_file);
+    if (in.fail()) {
+        cout << "cannot open file: " << in_file << endl;
+        return;
+    }
+    ofstream out(out_file);
+    if (!out.is_open()) {
+        cout << "cannot open file: " << out_file << endl;
+        return;
+    }
+    string line;
+    while (getline(in, line)) {
+        int at = line.find('@');
+        if (at != string::npos) {
+            int space1 = line.find(' ');
+            int space2 = line.find(' ', space1 + 1);
+            string var = line.substr(space1 + 1, space2 - space1 - 1);
+            string result = "";
+            if (var == "NUM_SPHERES") {
+                result = to_string(parser_.spheres.size());
+            } else if (var == "NUM_DIR_LIGHTS") {
+                result = to_string(parser_.directional_lights.size());
+            } else if (var == "NUM_POINT_LIGHTS") {
+                result = to_string(parser_.point_lights.size());
+            }
+            line = line.substr(0, at) + result;
+        }
+        out << line << "\n";
+    }
+    in.close();
+    out.close();
+}
+
 bool RayTracer::ParseEvent(Event& ename) {
     switch(ename) {
         case QUIT:
@@ -137,7 +171,7 @@ void RayTracer::SetUp() {
     glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &work_group_invocations);
     cout << "max local work group invocations: " << work_group_invocations << endl;
 
-    compute_program_ = LoadComputeShader(Config::compute_shader);
+    compute_program_ = LoadComputeShader(Config::compute_shader_out);
     render_program_ = LoadShaders(Config::vert_shader, Config::frag_shader);
     glUseProgram(render_program_);
 
@@ -235,11 +269,20 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
         fpsTime_ = currentTime_;
         frameCounter_ = 0;
     }
+    mat4 iView = inverse(view);
+    camera_.pos = vec3(iView * vec4(0,0,0,1));
+    mat4 iProj = inverse(proj);
+    mat4 invProjView = iView * iProj;
     glUseProgram(compute_program_);
+    GLint loc = glGetUniformLocation(compute_program_, "invProjView");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, &invProjView[0][0]);
+    glUniform3fv(glGetUniformLocation(compute_program_, "camera_pos"), 1, &camera_.pos[0]);
+    /*
     GLint loc = glGetUniformLocation(compute_program_, "proj");
     glUniformMatrix4fv(loc, 1, GL_FALSE, &proj[0][0]);
     loc = glGetUniformLocation(compute_program_, "view");
     glUniformMatrix4fv(loc, 1, GL_FALSE, &view[0][0]);
+    */
 
     glDispatchCompute((GLuint)SW_, (GLuint)SH_, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

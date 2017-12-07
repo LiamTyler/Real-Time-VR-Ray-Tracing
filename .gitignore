@@ -2,6 +2,7 @@ build/
 ext/MinVR/
 *.swp
 src/include/config.h
+shaders/compute.shader
 
 # Prerequisites
 *.d

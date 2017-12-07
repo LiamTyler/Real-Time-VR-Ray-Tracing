@@ -8,30 +8,30 @@ ambient_light .1 .1 .1
 directional_light .7 .7 .7  .1 .1 -1
 directional_light .7 .7 .7  -.1 -.1 1
 
-#material 1 0 0  1 0 0  0 0 0  50  0 0 0  1.0
-#material 1 0 0  1 0 0  1 1 1   50  0 0 0  1.0
-#sphere 150 0 300 100
-#
-#material 0 1 0  0 1 0  1 1 1   50  0 0 0  1.0
-#sphere -150 0 300 100
-#
-#material 0 0 1  0 0 1  1 1 1   50  0 0 0  1.0
-#sphere 0 150 300 100
+material 1 0 0  1 0 0  0 0 0  50  0 0 0  1.0
+material 1 0 0  1 0 0  1 1 1   50  0 0 0  1.0
+sphere 150 0 300 100
 
-#material 1 0 0  1 0 0  1 1 1   50  0 0 0  1.0
-#sphere 0 0 300 100
+material 0 1 0  0 1 0  1 1 1   50  0 0 0  1.0
+sphere -150 0 300 100
 
-#material 0 1 0  0 1 0  1 1 1   50  0 0 0  1.0
-#sphere -300 0 0 100
+material 0 0 1  0 0 1  1 1 1   50  0 0 0  1.0
+sphere 0 150 300 100
+
+material 1 0 0  1 0 0  1 1 1   50  0 0 0  1.0
+sphere 0 0 300 100
+
+material 0 1 0  0 1 0  1 1 1   50  0 0 0  1.0
+sphere -300 0 0 100
 
 material .1 1 .1  0 0 1  1 1 1   50  0 0 0  1.0
 sphere 0 0 -1 .5
 
-#material 1 0 1  1 0 1  1 1 1   50  0 0 0  1.0
-#sphere 300 0 0 100
+material 1 0 1  1 0 1  1 1 1   50  0 0 0  1.0
+sphere 300 0 0 100
 
-#material 0 1 1  0 1 1  1 1 1   50  0 0 0  1.0
-#sphere 0 -300 0 100
+material 0 1 1  0 1 1  1 1 1   50  0 0 0  1.0
+sphere 0 -300 0 100
 
-#material 1 1 0  1 1 0  1 1 1   50  0 0 0  1.0
-#sphere 0 300 0 100
+material 1 1 0  1 1 0  1 1 1   50  0 0 0  1.0
+sphere 0 300 0 100
