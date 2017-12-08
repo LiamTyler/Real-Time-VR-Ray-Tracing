@@ -34,7 +34,6 @@
 #include <cmath>
 #include <vector>
 
-using namespace MinVR;
 using namespace glm;
 using namespace std;
 
@@ -82,42 +81,6 @@ inline istream& operator >>(istream& in, vec3& v) {
     in >> v.x >> v.y >> v.z;
     return in;
 }
-
-/*
-inline SDL_Window* InitAndWindow(string title, int ox, int oy, int w, int h) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        cout << "Failed to init SDL" << endl;
-        return nullptr;
-    }
-
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-
-    SDL_Window* window = SDL_CreateWindow(title.c_str(), ox, oy, w, h, SDL_WINDOW_OPENGL);
-    if (window == NULL) {
-        cout << "Failed to create an SDL2 window" << endl;
-        exit(1);
-    }
-    SDL_GLContext context = SDL_GL_CreateContext(window);
-    if (context == NULL) {
-        cout << "Failed to create an opengl context" << endl;
-        exit(1);
-    }
-
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        cout << "Failed to init GLEW" << endl;
-        exit(1);
-    }
-    // if (SDL_GL_SetSwapInterval(1) < 0)
-    //     cout << "Failed to set vsync" << endl;
-
-    // glEnable(GL_DEPTH_TEST);
-
-    return window;
-}
-*/
 
 inline GLuint LoadComputeShader(string compute_shader_path) {
     ifstream in(compute_shader_path);

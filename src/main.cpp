@@ -1,6 +1,8 @@
 #include "include/utils.h"
 #include "include/rayTracer.h"
 
+using namespace MinVR;
+
 class MyVRApp : public VRApp {
     public:
         MyVRApp(int argc, char** argv) : VRApp(argc, argv) {

@@ -69,6 +69,8 @@ bool Parser::Parse() {
             vec3 c;
             in >> c;
             ambient_light = AmbientLight(c);
+        } else if (command == "environment_map") {
+            in >> env_map;
         } else {
             getline(in, line);
             cout << "WARNING. Do not know command: " << command << endl;

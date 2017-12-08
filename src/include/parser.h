@@ -31,6 +31,7 @@ class Parser {
         AmbientLight ambient_light;
         
         vec4 background_color;
+        string env_map;
 };
 
 #endif  // SRC_INCLUDE_PARSER_H_

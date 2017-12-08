@@ -12,6 +12,7 @@ class RayTracer {
         bool ParseEvent(Event& name);
         void EditShader(string in_file, string out_file);
         void SetUp();
+        void LoadEnvMap(string path);
         void Render(mat4& view, mat4& proj);
         vec3 getCameraPos() { return camera_.pos; }
         vec3 getCameraDir() { return camera_.dir; }
@@ -31,6 +32,8 @@ class RayTracer {
         GLuint spheres_ssbo_;
         GLuint dir_lights_ssbo_;
         GLuint point_lights_ssbo_;
+
+        GLuint texture_;
 
         int SW_;
         int SH_;

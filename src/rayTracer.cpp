@@ -1,5 +1,8 @@
 #include "include/rayTracer.h"
 #include "include/config.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "include/stb_image.h"
+
 
 RayTracer::RayTracer() {
     camera_vel_ = vec3(0, 0, 0);
@@ -109,6 +112,29 @@ bool RayTracer::ParseEvent(Event& ename) {
     }
         
     return false;
+}
+
+void RayTracer::LoadEnvMap(string path) {
+    int w, h, comp;
+    unsigned char * image;
+    glGenTextures(1, &texture_);
+    // glActiveTexture(GL_TEXTURE1);
+
+    image = stbi_load(path.c_str(), &w, &h, &comp, 4);
+    if (image == nullptr) {
+        cout << "Failed to load the image: " << path << endl;
+    }
+    glBindTexture(GL_TEXTURE_2D, texture_);
+    //if (comp == 3)
+    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    //else
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glBindTexture(GL_TEXTURE_2D, texture_);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_image_free(image);
+
+    cout << "loaded image: " << path  << ", with: w=" << w << ", h=" << h << endl;
 }
 
 void RayTracer::SetUp() {
@@ -251,6 +277,14 @@ void RayTracer::SetUp() {
     // send other variables to the GPU
     glUniform4fv(glGetUniformLocation(compute_program_, "background_color"),
             1, &parser_.background_color[0]);
+    glUniform1i(glGetUniformLocation(compute_program_, "usingEnvMap"), 0);
+    if (parser_.env_map != "") {
+        cout << "using envmap" << endl;
+        glActiveTexture(GL_TEXTURE1);
+        LoadEnvMap(parser_.env_map);
+        glUniform1i(glGetUniformLocation(compute_program_, "env_map"), 1);
+        glUniform1i(glGetUniformLocation(compute_program_, "usingEnvMap"), 1);
+    }
 
 }
 
