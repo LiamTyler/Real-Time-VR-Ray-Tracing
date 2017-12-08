@@ -5,6 +5,8 @@ layout(rgba32f, binding = 0) uniform image2D img_output;
 #define NUM_SPHERES @
 #define NUM_POINT_LIGHTS @
 #define NUM_DIR_LIGHTS @
+#define USING_ENV_MAP @
+
 #define M_PI 3.1415926535897932384626433832795
 
 uniform ivec2 img_size;
@@ -14,7 +16,6 @@ uniform vec3 camera_dy;
 uniform vec3 camera_ul;
 uniform vec4 background_color;
 uniform sampler2D env_map;
-uniform bool usingEnvMap;
 
 uniform mat4 invProjView;
 
@@ -183,7 +184,7 @@ void main() {
         }
 
     } else {
-        if (usingEnvMap) {
+        if (USING_ENV_MAP) {
             vec3 d = ray.dir;
             float lat = asin(d.y);
             float lon = atan(d.x, d.z);

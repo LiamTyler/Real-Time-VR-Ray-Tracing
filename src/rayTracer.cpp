@@ -7,6 +7,7 @@
 RayTracer::RayTracer() {
     camera_vel_ = vec3(0, 0, 0);
     camera_rot_ = vec3(0, 0, 0);
+    camera_rot_vel_ = vec3(0, 0, 0);
     speed_ = 50;
     fpsTime_ = currentTime_ = lastTime_ = 0;
     model_ = mat4(1.0f);
@@ -45,6 +46,11 @@ void RayTracer::EditShader(string in_file, string out_file) {
                 result = to_string(parser_.directional_lights.size());
             } else if (var == "NUM_POINT_LIGHTS") {
                 result = to_string(parser_.point_lights.size());
+            } else if (var == "USING_ENV_MAP") {
+                if (parser_.env_map == "")
+                    result = "false";
+                else
+                    result = "true";
             }
             line = line.substr(0, at) + result;
         }
@@ -90,24 +96,24 @@ bool RayTracer::ParseEvent(Event& ename) {
             camera_vel_.y = 0;
             break;
         case R_FORWARDS_DOWN:
-            camera_rot_.x = radians(1.0f);
+            camera_rot_vel_.x = radians(1.0f);
             break;
         case R_BACKWARDS_DOWN:
-            camera_rot_.x = radians(-1.0f);
+            camera_rot_vel_.x = radians(-1.0f);
             break;
         case R_LEFT_DOWN:
-            camera_rot_.y = radians(1.0f);
+            camera_rot_vel_.y = radians(1.0f);
             break;
         case R_RIGHT_DOWN:
-            camera_rot_.y = radians(-1.0f);
+            camera_rot_vel_.y = radians(-1.0f);
             break;
         case R_FORWARDS_UP:
         case R_BACKWARDS_UP:
-            camera_rot_.x = 0;
+            camera_rot_vel_.x = 0;
             break;
         case R_LEFT_UP:
         case R_RIGHT_UP:
-            camera_rot_.y = 0;
+            camera_rot_vel_.y = 0;
             break;
     }
         
@@ -235,7 +241,10 @@ void RayTracer::SetUp() {
     glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     camera_ = parser_.camera;
-    model_ = translate(model_, camera_.pos);
+    camera_pos_ = camera_.pos;
+    camera_rot_.x = atan2(camera_.dir.y, -camera_.dir.z);
+    camera_rot_.y = atan2(-camera_.dir.x, -camera_.dir.z);
+    cout << "camera_rot: " << camera_rot_ << endl;
     vec3 dx = normalize(cross(camera_.dir, camera_.up));
     vec3 dy = -camera_.up;
     rotated_dx_ = dx;
@@ -246,7 +255,7 @@ void RayTracer::SetUp() {
     glUseProgram(compute_program_);
     ivec2 ss(SW_, SH_);
     glUniform2iv(glGetUniformLocation(compute_program_, "img_size"), 1, &ss[0]);
-    glUniform3fv(glGetUniformLocation(compute_program_, "camera_pos"), 1, &camera_.pos[0]);
+    glUniform3fv(glGetUniformLocation(compute_program_, "camera_pos"), 1, &camera_pos_[0]);
 
     // Send spheres to the GPU
     glGenBuffers(1, &spheres_ssbo_);
@@ -277,13 +286,10 @@ void RayTracer::SetUp() {
     // send other variables to the GPU
     glUniform4fv(glGetUniformLocation(compute_program_, "background_color"),
             1, &parser_.background_color[0]);
-    glUniform1i(glGetUniformLocation(compute_program_, "usingEnvMap"), 0);
     if (parser_.env_map != "") {
-        cout << "using envmap" << endl;
         glActiveTexture(GL_TEXTURE1);
         LoadEnvMap(parser_.env_map);
         glUniform1i(glGetUniformLocation(compute_program_, "env_map"), 1);
-        glUniform1i(glGetUniformLocation(compute_program_, "usingEnvMap"), 1);
     }
 
 }
@@ -292,11 +298,23 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
     // update model matrix
     float dt = currentTime_ - lastTime_;
     dt *= speed_;
+    camera_pos_ += dt * camera_vel_;
+    camera_rot_ += dt * camera_rot_vel_;
+    /*
+    model_ = mat4(1.0f);
     model_ = rotate(model_, dt * camera_rot_.y, vec3(0, 1, 0));
     model_ = rotate(model_, dt * camera_rot_.x, vec3(1, 0, 0));
     model_ = translate(model_, dt * camera_vel_);
-    // view = model_ * view;
-    view = view * inverse(model_);
+    model_ = translate(model_, camera_.pos);
+    */
+    mat4 rot = rotate(mat4(1.0f), camera_rot_.y, vec3(0, 1, 0));
+    rot = rotate(rot, camera_rot_.x, vec3(1, 0, 0));
+    mat4 trans = translate(mat4(1.0f), camera_pos_);
+    model_ = trans * rot;
+    // model_ = rotate(mat4(1.0), radians(10.0f), vec3(0,1,0));
+    // model_ = translate(mat4(1.0), vec3(0, 0, 50));
+    view = inverse(model_) * view;
+    // view = view * inverse(model_);
     // keep track of FPS
     frameCounter_++;
     lastTime_ = currentTime_;
@@ -306,19 +324,13 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
         frameCounter_ = 0;
     }
     mat4 iView = inverse(view);
-    camera_.pos = vec3(iView * vec4(0,0,0,1));
+    vec3 pos = vec3(iView * vec4(0,0,0,1));
     mat4 iProj = inverse(proj);
     mat4 invProjView = iView * iProj;
     glUseProgram(compute_program_);
     GLint loc = glGetUniformLocation(compute_program_, "invProjView");
     glUniformMatrix4fv(loc, 1, GL_FALSE, &invProjView[0][0]);
-    glUniform3fv(glGetUniformLocation(compute_program_, "camera_pos"), 1, &camera_.pos[0]);
-    /*
-    GLint loc = glGetUniformLocation(compute_program_, "proj");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, &proj[0][0]);
-    loc = glGetUniformLocation(compute_program_, "view");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, &view[0][0]);
-    */
+    glUniform3fv(glGetUniformLocation(compute_program_, "camera_pos"), 1, &pos[0]);
 
     glDispatchCompute((GLuint)SW_, (GLuint)SH_, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

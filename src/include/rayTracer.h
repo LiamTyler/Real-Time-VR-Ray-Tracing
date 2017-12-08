@@ -41,8 +41,10 @@ class RayTracer {
         Camera camera_;
         mat4 model_;
         float dist_to_plane_;
+        vec3 camera_pos_;
         vec3 camera_vel_;
         vec3 camera_rot_;
+        vec3 camera_rot_vel_;
         vec3 rotated_camera_dir_;
         vec3 rotated_camera_up_;
         vec3 rotated_dx_;
