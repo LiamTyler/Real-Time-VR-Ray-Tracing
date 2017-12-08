@@ -1,5 +1,4 @@
 #include "include/utils.h"
-#include "include/config.h"
 #include "include/rayTracer.h"
 
 class MyVRApp : public VRApp {
@@ -55,8 +54,6 @@ class MyVRApp : public VRApp {
         void onVRRenderGraphicsContext(const VRGraphicsState &renderState) {
             if (renderState.isInitialRenderCall()) {
                 rayTracer_->SetUp();
-                rayTracer_->EditShader(Config::compute_shader_in,
-                                       Config::compute_shader_out);
             }
 
             if (!isRunning()) {

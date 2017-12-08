@@ -11,6 +11,7 @@ ExternalProject_Add(
     MinVR
     GIT_REPOSITORY https://github.com/MinVR/MinVR.git
     PREFIX ${CMAKE_SOURCE_DIR}/ext/MinVR
+	UPDATE_COMMAND ""
 	CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DMINVR_VRPN_PLUGIN=${VRPN} -DMINVR_OPENVR_PLUGIN=${OPENVR}
 )
 

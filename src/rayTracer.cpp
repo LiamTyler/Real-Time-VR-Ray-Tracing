@@ -171,6 +171,8 @@ void RayTracer::SetUp() {
     glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &work_group_invocations);
     cout << "max local work group invocations: " << work_group_invocations << endl;
 
+    // Edit and Compile shaders
+    EditShader(Config::compute_shader_in, Config::compute_shader_out);
     compute_program_ = LoadComputeShader(Config::compute_shader_out);
     render_program_ = LoadShaders(Config::vert_shader, Config::frag_shader);
     glUseProgram(render_program_);
