@@ -298,8 +298,8 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
     // update model matrix
     float dt = currentTime_ - lastTime_;
     dt *= speed_;
-    camera_pos_ += dt * camera_vel_;
-    camera_rot_ += dt * camera_rot_vel_;
+    // camera_pos_ += .5 * dt * camera_vel_;
+    camera_rot_ += 2 * dt * camera_rot_vel_;
     /*
     model_ = mat4(1.0f);
     model_ = rotate(model_, dt * camera_rot_.y, vec3(0, 1, 0));
@@ -309,6 +309,10 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
     */
     mat4 rot = rotate(mat4(1.0f), camera_rot_.y, vec3(0, 1, 0));
     rot = rotate(rot, camera_rot_.x, vec3(1, 0, 0));
+    vec3 new_dir = vec3(rot * vec4(camera_.dir, 0));
+    vec3 new_up = vec3(rot * vec4(camera_.up, 0));
+    vec3 new_dx = cross(new_dir, new_up);
+    camera_pos_ += .5 * dt * (camera_vel_.z * new_dir + camera_vel_.x * new_dx);
     mat4 trans = translate(mat4(1.0f), camera_pos_);
     model_ = trans * rot;
     // model_ = rotate(mat4(1.0), radians(10.0f), vec3(0,1,0));

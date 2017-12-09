@@ -21,9 +21,9 @@ class MyVRApp : public VRApp {
                     if (name == "KbdEsc_Down") {
                         shutdown();
                     } else if (name == "KbdW_Down") {
-                        e = L_BACKWARDS_DOWN;
-                    } else if (name == "KbdS_Down") {
                         e = L_FORWARDS_DOWN;
+                    } else if (name == "KbdS_Down") {
+                        e = L_BACKWARDS_DOWN;
                     } else if (name == "KbdA_Down") {
                         e = L_LEFT_DOWN;
                     } else if (name == "KbdD_Down") {
