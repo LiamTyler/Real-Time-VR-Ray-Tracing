@@ -10,7 +10,7 @@ namespace Config {
     const std::string vert_shader        = main_dir + "shaders/shader.vert";
     const std::string frag_shader        = main_dir + "shaders/shader.frag";
 
-    const std::string scene_file         = main_dir + "scenes/test_scene.scn";
+    const std::string scene_file         = main_dir + "scenes/reflection.scn";
 }
 
 #endif  // SRC_INCLUDE_CONFIG_H_

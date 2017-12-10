@@ -40,7 +40,7 @@ typedef struct DirectionalLight {
 
     DirectionalLight(vec3 c, vec3 d) {
         color = c;
-        dir = d;
+        dir = normalize(d);
     }
 
     vec3 color; float pad1;

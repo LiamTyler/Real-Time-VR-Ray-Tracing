@@ -20,6 +20,7 @@ class Parser {
         bool Parse();
 
     // private:
+        int max_depth;
         string scene_filename;
         Camera camera;
         ivec2 film_resolution;

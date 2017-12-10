@@ -14,6 +14,7 @@ void Parser::Init() {
     camera = Camera();
     ambient_light = AmbientLight();
     film_resolution = ivec2(640, 480);
+    max_depth = 2;
 }
 
 bool Parser::Parse() {
@@ -71,6 +72,8 @@ bool Parser::Parse() {
             ambient_light = AmbientLight(c);
         } else if (command == "environment_map") {
             in >> env_map;
+        } else if (command == "max_depth") {
+            in >> max_depth;
         } else {
             getline(in, line);
             cout << "WARNING. Do not know command: " << command << endl;

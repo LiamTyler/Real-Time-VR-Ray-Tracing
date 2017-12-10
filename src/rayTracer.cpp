@@ -46,6 +46,8 @@ void RayTracer::EditShader(string in_file, string out_file) {
                 result = to_string(parser_.directional_lights.size());
             } else if (var == "NUM_POINT_LIGHTS") {
                 result = to_string(parser_.point_lights.size());
+            } else if (var == "MAX_DEPTH") {
+                result = to_string(parser_.max_depth);
             } else if (var == "USING_ENV_MAP") {
                 if (parser_.env_map == "")
                     result = "false";
