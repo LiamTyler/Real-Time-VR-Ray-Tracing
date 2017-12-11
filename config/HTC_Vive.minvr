@@ -1,5 +1,4 @@
 <MinVR>
-  <PluginPath>../../../MinVR2/build/Release/plugins</PluginPath>
 	<GLFWPlugin pluginType="MinVR_GLFW"/>
 	<OpenGLPlugin pluginType="MinVR_OpenGL"/>
     <OpenVRPlugin pluginType="MinVR_OpenVR"/>	
@@ -21,20 +20,31 @@
 	  <QuadBuffered>0</QuadBuffered>
 	  
 	  <StereoFormat>Mono</StereoFormat>
-  
-	<VRSetups>
+
+
+  <Border>0</Border>
+  <Caption>Desktop</Caption>
+  <GPUAffinity>0</GPUAffinity>
+  <XPos>100</XPos>
+  <YPos>100</YPos>
+  <Width>1512</Width>
+  <Height>1680</Height>
+
+  <VRSetups>
 		<Desktop hostType="VRStandAlone">
 	      <GLFWToolkit windowtoolkitType="VRGLFWWindowToolkit"/>
 	      <OpenGLToolkit graphicstoolkitType="VROpenGLGraphicsToolkit"/>
 	      <RootNode displaynodeType="VRGraphicsWindowNode">
-			<HTC displaynodeType="VROpenVRNode">
+          <HTC displaynodeType="VROpenVRNode">
 				<HideTracker>0</HideTracker>
 				<ReportStatePressed>1</ReportStatePressed>
 				<ReportStateTouched>1</ReportStateTouched>
 				<ReportStateAxis>1</ReportStateAxis>
 				<ReportStatePose>1</ReportStatePose>
 				<DrawHMDOnly>0</DrawHMDOnly>
-				<MSAA_buffers>4</MSAA_buffers>	
+				<MSAA_buffers>4</MSAA_buffers>
+            <DeviceUnitsToRoomUnitsScale>3.28084</DeviceUnitsToRoomUnitsScale>
+            <DeviceToRoom type="floatarray">1,0,0,0, 0,1,0,4, 0,0,1,0, 0,0,0,1</DeviceToRoom>
 			</HTC>
 		</RootNode>
 		</Desktop>

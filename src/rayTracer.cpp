@@ -290,7 +290,7 @@ void RayTracer::SetUp() {
             1, &parser_.background_color[0]);
     if (parser_.env_map != "") {
         glActiveTexture(GL_TEXTURE1);
-        LoadEnvMap(parser_.env_map);
+		LoadEnvMap(Config::main_dir + parser_.env_map);
         glUniform1i(glGetUniformLocation(compute_program_, "env_map"), 1);
     }
 
@@ -310,17 +310,20 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
     model_ = translate(model_, camera_.pos);
     */
     mat4 rot = rotate(mat4(1.0f), camera_rot_.y, vec3(0, 1, 0));
-    rot = rotate(rot, camera_rot_.x, vec3(1, 0, 0));
+   rot = rotate(rot, camera_rot_.x, vec3(1, 0, 0));
+
     vec3 new_dir = vec3(rot * vec4(camera_.dir, 0));
     vec3 new_up = vec3(rot * vec4(camera_.up, 0));
     vec3 new_dx = cross(new_dir, new_up);
     camera_pos_ += .5 * dt * (camera_vel_.z * new_dir + camera_vel_.x * new_dx);
     mat4 trans = translate(mat4(1.0f), camera_pos_);
-    model_ = trans * rot;
+
+    model_ =  trans * rot ;
     // model_ = rotate(mat4(1.0), radians(10.0f), vec3(0,1,0));
     // model_ = translate(mat4(1.0), vec3(0, 0, 50));
-    view = inverse(model_) * view;
-    // view = view * inverse(model_);
+    // view = inverse(model_) * view;   // (m-1 * v)-1 => (v-1)*ray
+	// cout << view << endl;
+    view = view * inverse(model_);
     // keep track of FPS
     frameCounter_++;
     lastTime_ = currentTime_;
