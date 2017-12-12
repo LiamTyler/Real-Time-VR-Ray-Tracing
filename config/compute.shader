@@ -41,6 +41,9 @@ struct Material {
 struct Sphere {
     vec4 pos;
     float radius;
+    float pad1;
+    float pad2;
+    float pad3;
     Material mat;
 };
 
@@ -70,6 +73,7 @@ layout(std430, binding=4) buffer point_light_list
     PointLight point_lights[];
 };
 
+/*
 bool IntersectSphere(in const Ray r, const in Sphere s, out float t) {
     // find if ray hit the sphere
     float tmin = -1;
@@ -100,8 +104,8 @@ bool IntersectSphere(in const Ray r, const in Sphere s, out float t) {
 
     return true;
 }
+*/
 
-/*
    bool IntersectSphere(in const Ray r, const in Sphere s, out float t) {
    vec3 OC = r.pos - s.pos.xyz;
    float b = dot(r.dir, OC);
@@ -117,7 +121,6 @@ bool IntersectSphere(in const Ray r, const in Sphere s, out float t) {
 
    return true;
    }
- */
 
 bool Intersect(in const Ray r, out int hit_index, out float t) {
     int lowest_hit_index = -1;

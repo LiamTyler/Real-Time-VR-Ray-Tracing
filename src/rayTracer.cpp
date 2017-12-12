@@ -125,17 +125,14 @@ bool RayTracer::ParseEvent(Event& ename) {
 void RayTracer::LoadEnvMap(string path) {
     int w, h, comp;
     unsigned char * image;
-    glGenTextures(1, &texture_);
-    // glActiveTexture(GL_TEXTURE1);
 
     image = stbi_load(path.c_str(), &w, &h, &comp, 4);
     if (image == nullptr) {
         cout << "Failed to load the image: " << path << endl;
     }
+    glGenTextures(1, &texture_);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texture_);
-    //if (comp == 3)
-    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-    //else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -209,7 +206,7 @@ void RayTracer::SetUp() {
     EditShader(Config::compute_shader_in, Config::compute_shader_out);
     compute_program_ = LoadComputeShader(Config::compute_shader_out);
     render_program_ = LoadShaders(Config::vert_shader, Config::frag_shader);
-    glUseProgram(render_program_);
+    glUseProgram(compute_program_);
 
     tex_output_;
     glGenTextures(1, &tex_output_);
@@ -222,6 +219,7 @@ void RayTracer::SetUp() {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SW_, SH_, 0, GL_RGBA, GL_FLOAT, NULL);
     glBindImageTexture(0, tex_output_, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
+    glUseProgram(render_program_);
     quad_vao_;
     glGenVertexArrays(1, &quad_vao_);
     glBindVertexArray(quad_vao_);
@@ -289,7 +287,6 @@ void RayTracer::SetUp() {
     glUniform4fv(glGetUniformLocation(compute_program_, "background_color"),
             1, &parser_.background_color[0]);
     if (parser_.env_map != "") {
-        glActiveTexture(GL_TEXTURE1);
 		LoadEnvMap(Config::main_dir + parser_.env_map);
         glUniform1i(glGetUniformLocation(compute_program_, "env_map"), 1);
     }
@@ -300,7 +297,6 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
     // update model matrix
     float dt = currentTime_ - lastTime_;
     dt *= speed_;
-    // camera_pos_ += .5 * dt * camera_vel_;
     camera_rot_ += 2 * dt * camera_rot_vel_;
     /*
     model_ = mat4(1.0f);
@@ -341,11 +337,14 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
     glUniformMatrix4fv(loc, 1, GL_FALSE, &invProjView[0][0]);
     glUniform3fv(glGetUniformLocation(compute_program_, "camera_pos"), 1, &pos[0]);
 
+    if (parser_.env_map != "") {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture_);
+    }
     glDispatchCompute((GLuint)SW_, (GLuint)SH_, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glClear(GL_COLOR_BUFFER_BIT);
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glUseProgram(render_program_);
     glBindVertexArray(quad_vao_);
     glActiveTexture(GL_TEXTURE0);
