@@ -261,16 +261,17 @@ void RayTracer::SetUp() {
     glUniform3fv(glGetUniformLocation(compute_program_, "camera_pos"), 1, &camera_pos_[0]);
 
     // Send spheres to the GPU
-    Sphere arr[parser_.spheres.size()];
+    Sphere* arr = new Sphere[parser_.spheres.size()];
     for (int i = 0; i < parser_.spheres.size(); i++) {
         arr[i] = *parser_.spheres[i];
     }
     glGenBuffers(1, &spheres_ssbo_);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spheres_ssbo_);
     // glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser_.spheres.size(), &parser_.spheres[0], GL_STATIC_COPY);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser_.spheres.size(), &arr, GL_STATIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser_.spheres.size(), &arr[0], GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, spheres_ssbo_);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    delete[] arr;
 
     // Vertices
     glGenBuffers(1, &vertex_ssbo_);
