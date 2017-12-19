@@ -186,9 +186,15 @@ bool IntersectSphere(in const Ray r, const in Sphere s, out float t) {
         return false;
 
     float sdisc = sqrt(disc);
-    t = -b - sdisc;
-    if (t < 0)
+    float t1 = -b - sdisc;
+    float t2 = -b + sdisc;
+    if (t1 < 0 && t2 < 0) {
         return false;
+    }
+    if (t1 > 0)
+        t = t1;
+    else
+        t = t2;
 
     return true;
 }
@@ -395,7 +401,17 @@ vec3 getColor(in Ray r) {
             }
             color += multiplier * getLocalIllumination(p, v, n, mat);
             multiplier *= mat.kt.xyz;
-            vec3 dir = reflect(currentRay.dir, n);
+            vec3 dir;
+            if (mat.ior < 0) {
+                dir = reflect(currentRay.dir, n);
+            } else {
+                float eta = 1.0 / mat.ior;
+                if (dot(n, v) > 0) {
+                    n = -n;
+                    eta = mat.ior;
+                }
+                dir = refract(v, n, eta);
+            }
             currentRay = Ray(p + 0.001 * dir, dir);
         } else {
             color += multiplier * getBackgroundColor(currentRay.dir);

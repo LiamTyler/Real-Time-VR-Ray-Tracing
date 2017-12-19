@@ -9,7 +9,7 @@ RayTracer::RayTracer() {
     camera_vel_ = vec3(0, 0, 0);
     camera_rot_ = vec3(0, 0, 0);
     camera_rot_vel_ = vec3(0, 0, 0);
-    speed_ = 50;
+    speed_ = 20;
     fpsTime_ = currentTime_ = lastTime_ = 0;
     model_ = mat4(1.0f);
 }
