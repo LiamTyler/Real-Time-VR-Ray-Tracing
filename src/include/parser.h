@@ -9,6 +9,7 @@
 class Parser {
     public:
         Parser();
+        ~Parser();
 
         // filename of the scene to parse
         Parser(string filename);
@@ -25,7 +26,9 @@ class Parser {
         Camera camera;
         ivec2 film_resolution;
 
-        vector<Sphere> spheres;
+        vector<vec4> vertices;
+        vector<Sphere*> spheres;
+        vector<Triangle> triangles;
 
         vector<PointLight> point_lights;
         vector<DirectionalLight> directional_lights;

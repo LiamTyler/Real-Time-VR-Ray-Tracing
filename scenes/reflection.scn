@@ -1,6 +1,6 @@
 background 1 1 1 
 
-camera 0 0 0  0 0 -1  0 1 0  45
+camera 0 0 8  0 0 -1  0 1 0  45
 
 material 0.8 0 0   .8 0 0  1 1 1   100  0.2 0.2 0.2  1.0
 sphere -1.5 1 0  1

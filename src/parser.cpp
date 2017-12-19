@@ -5,6 +5,15 @@ Parser::Parser() {
     Init();
 }
 
+Parser::~Parser() {
+    for (int i = 0; i < spheres.size(); i++)
+        delete spheres[i];
+    /*
+    for (int i = 0; i < triangles.size(); i++)
+        delete triangles[i];
+    */
+}
+
 Parser::Parser(string filename) {
     scene_filename = filename;
     Init();
@@ -44,11 +53,23 @@ bool Parser::Parse() {
             int w, h;
             in >> w >> h;
             film_resolution = ivec2(w, h);
+        } else if (command == "vertex") {
+            vec3 v;
+            in >> v;
+            vertices.push_back(vec4(v, 0));
         } else if (command == "sphere") {
             vec3 p;
             float r;
             in >> p >> r;
-            spheres.push_back(Sphere(p, r, current_material));
+            spheres.push_back(new Sphere(p, r, current_material));
+        } else if (command == "triangle") {
+            vec3 v;
+            in >> v;
+            triangles.push_back(Triangle(v.x, v.y, v.z, current_material));
+        } else if (command == "normal_triangle") {
+            vec3 v, n;
+            in >> v >> n;
+            triangles.push_back(Triangle(v.x, v.y, v.z, current_material));
         } else if (command == "background") {
             vec3 c;
             in >> c;
@@ -78,6 +99,9 @@ bool Parser::Parse() {
             getline(in, line);
             cout << "WARNING. Do not know command: " << command << endl;
         }
+    }
+    for (int i = 0; i < triangles.size(); i++) {
+        triangles[i].CalculateEdges(vertices);
     }
     in.close();
     return true;

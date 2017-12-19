@@ -32,6 +32,9 @@ class RayTracer {
         GLuint spheres_ssbo_;
         GLuint dir_lights_ssbo_;
         GLuint point_lights_ssbo_;
+        GLuint bvh_ssbo_;
+        GLuint triangle_ssbo_;
+        GLuint vertex_ssbo_;
 
         GLuint texture_;
 

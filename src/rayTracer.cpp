@@ -2,6 +2,7 @@
 #include "include/config.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
+#include "include/bvh.h"
 
 
 RayTracer::RayTracer() {
@@ -46,6 +47,8 @@ void RayTracer::EditShader(string in_file, string out_file) {
                 result = to_string(parser_.directional_lights.size());
             } else if (var == "NUM_POINT_LIGHTS") {
                 result = to_string(parser_.point_lights.size());
+            } else if (var == "NUM_TRIANGLES") {
+                result = to_string(parser_.triangles.size());
             } else if (var == "MAX_DEPTH") {
                 result = to_string(parser_.max_depth);
             } else if (var == "USING_ENV_MAP") {
@@ -242,7 +245,7 @@ void RayTracer::SetUp() {
 
     camera_ = parser_.camera;
     camera_pos_ = camera_.pos;
-    camera_rot_.x = atan2(camera_.dir.y, -camera_.dir.z);
+    // camera_rot_.x = atan2(camera_.dir.y, camera_.dir.z);
     camera_rot_.y = atan2(-camera_.dir.x, -camera_.dir.z);
     cout << "camera_rot: " << camera_rot_ << endl;
     vec3 dx = normalize(cross(camera_.dir, camera_.up));
@@ -258,12 +261,29 @@ void RayTracer::SetUp() {
     glUniform3fv(glGetUniformLocation(compute_program_, "camera_pos"), 1, &camera_pos_[0]);
 
     // Send spheres to the GPU
+    Sphere arr[parser_.spheres.size()];
+    for (int i = 0; i < parser_.spheres.size(); i++) {
+        arr[i] = *parser_.spheres[i];
+    }
     glGenBuffers(1, &spheres_ssbo_);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, spheres_ssbo_);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser_.spheres.size(), &parser_.spheres[0], GL_STATIC_COPY);
+    // glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser_.spheres.size(), &parser_.spheres[0], GL_STATIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sphere) * parser_.spheres.size(), &arr, GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, spheres_ssbo_);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glUniform1i(glGetUniformLocation(compute_program_, "num_spheres"), parser_.spheres.size());
+
+    // Vertices
+    glGenBuffers(1, &vertex_ssbo_);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertex_ssbo_);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(vec4) * parser_.vertices.size(), &parser_.vertices[0], GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, vertex_ssbo_);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    glGenBuffers(1, &triangle_ssbo_);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, triangle_ssbo_);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Triangle) * parser_.triangles.size(), &parser_.triangles[0], GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, triangle_ssbo_);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     // send lights to the GPU
     // ambient
@@ -275,14 +295,12 @@ void RayTracer::SetUp() {
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(DirectionalLight) * parser_.directional_lights.size(), &parser_.directional_lights[0], GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, dir_lights_ssbo_);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glUniform1i(glGetUniformLocation(compute_program_, "num_dir_lights"), parser_.directional_lights.size());
     // point
     glGenBuffers(1, &point_lights_ssbo_);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, point_lights_ssbo_);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PointLight) * parser_.point_lights.size(), &parser_.point_lights[0], GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, point_lights_ssbo_);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glUniform1i(glGetUniformLocation(compute_program_, "num_point_lights"), parser_.point_lights.size());
     // send other variables to the GPU
     glUniform4fv(glGetUniformLocation(compute_program_, "background_color"),
             1, &parser_.background_color[0]);
@@ -291,6 +309,27 @@ void RayTracer::SetUp() {
         glUniform1i(glGetUniformLocation(compute_program_, "env_map"), 1);
     }
 
+    /*
+    BVH* root = new BVH;
+    root->Partition(parser_.spheres);
+    root->PrintTree(0, 5);
+    int level = root->getDeepestLevel();
+    int total = 0;
+    for (int i = 0; i < level; i++)
+        total += pow(2, i);
+    cout << "total nodes: " << total << endl;
+    glsl_bvh flatten[total];
+    for (int i = 0; i < total; i++) {
+        flatten[i].isUsed = false;
+    }
+    root->Fill(flatten, parser_.spheres, 0);
+    cout << "sizeof glsl_bvh: " << sizeof(glsl_bvh) << endl;
+    glGenBuffers(1, &bvh_ssbo_);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bvh_ssbo_);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glsl_bvh) * total, &flatten, GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, bvh_ssbo_);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    */
 }
 
 void RayTracer::Render(mat4 &view, mat4 &proj) {
@@ -306,10 +345,12 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
     model_ = translate(model_, camera_.pos);
     */
     mat4 rot = rotate(mat4(1.0f), camera_rot_.y, vec3(0, 1, 0));
-   rot = rotate(rot, camera_rot_.x, vec3(1, 0, 0));
+    rot = rotate(rot, camera_rot_.x, vec3(1, 0, 0));
 
-    vec3 new_dir = vec3(rot * vec4(camera_.dir, 0));
-    vec3 new_up = vec3(rot * vec4(camera_.up, 0));
+    // vec3 new_dir = vec3(rot * vec4(camera_.dir, 0));
+    // vec3 new_up = vec3(rot * vec4(camera_.up, 0));
+    vec3 new_dir = vec3(rot * vec4(0, 0, -1, 0));
+    vec3 new_up = vec3(rot * vec4(0, 1, 0, 0));
     vec3 new_dx = cross(new_dir, new_up);
     camera_pos_ += .5 * dt * (camera_vel_.z * new_dir + camera_vel_.x * new_dx);
     mat4 trans = translate(mat4(1.0f), camera_pos_);
@@ -341,7 +382,7 @@ void RayTracer::Render(mat4 &view, mat4 &proj) {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture_);
     }
-    glDispatchCompute((GLuint)SW_, (GLuint)SH_, 1);
+    glDispatchCompute((GLuint)SW_ / 8, (GLuint)SH_ / 8, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glClear(GL_COLOR_BUFFER_BIT);
