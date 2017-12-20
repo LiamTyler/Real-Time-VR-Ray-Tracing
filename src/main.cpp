@@ -6,7 +6,9 @@ using namespace MinVR;
 class MyVRApp : public VRApp {
     public:
         MyVRApp(int argc, char** argv) : VRApp(argc, argv) {
-            rayTracer_ = new RayTracer();
+            for (int i = 0; i < argc; i++)
+                cout << "argv[" << i << "] = " << argv[i] << endl;
+            rayTracer_ = new RayTracer(argv[3]);
         }
 
         void onVREvent(const VREvent &event) {

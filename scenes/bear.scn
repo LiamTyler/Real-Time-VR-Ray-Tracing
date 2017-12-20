@@ -11,8 +11,7 @@ camera 1.5 4 5.5 -.3 -.45 -1.1 0 1 0 26
 
 
 #Light Brown Body "Fur" Material
-material 0.6 0.38 0.06 0.6 0.38 0.06 0 0 0 20 0 0 0 1.0
-
+material 0.6 0.38 0.06 0.6 0.38 0.06 0 0 0 20 0 0 0 -1.0
 #head
 sphere 0 3.27 -0.224 1.1
 
@@ -29,8 +28,7 @@ sphere -0.717 4.061 0.017 0.274
 
 
 #Dark Brown Limb "Fur" Material
-material 0.35 0.24 0.05 0.22 0.17 0.05 0 0 0 2 0 0 0 1.0
-
+material 0.35 0.24 0.05 0.22 0.17 0.05 0 0 0 2 0 0 0 -1.0
 #snout
 sphere 0 2.814 0.93 0.4
 
@@ -48,8 +46,7 @@ sphere -0.711 4.039 -0.235 0.461
 
 
 #Dark Brown "Trim" Material
-material 0.05 0.03 0.005 0.10 0.06 0.01 0 0 0 2 0 0 0 1.0
-
+material 0.05 0.03 0.005 0.10 0.06 0.01 0 0 0 2 0 0 0 -1.0
 #Left Fingers
 sphere 0.954 2.042 0.739 0.147
 sphere 1.275 2.055 0.502 0.147

@@ -5,13 +5,15 @@
 #include "include/bvh.h"
 
 
-RayTracer::RayTracer() {
+RayTracer::RayTracer(string scene) {
     camera_vel_ = vec3(0, 0, 0);
     camera_rot_ = vec3(0, 0, 0);
     camera_rot_vel_ = vec3(0, 0, 0);
     speed_ = 20;
     fpsTime_ = currentTime_ = lastTime_ = 0;
     model_ = mat4(1.0f);
+    scene_ = Config::scene_folder + scene;
+    cout << scene_ << endl;
 }
 
 RayTracer::~RayTracer() {
@@ -174,7 +176,7 @@ void RayTracer::SetUp() {
     };
 
     // Parse the scene file
-    parser_ = Parser(Config::scene_file);
+    parser_ = Parser(scene_);
     if (!parser_.Parse()) {
         cout << "Could not parse scene" << endl;
         return;

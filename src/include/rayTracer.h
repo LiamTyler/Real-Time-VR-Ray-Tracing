@@ -7,7 +7,7 @@
 
 class RayTracer {
     public:
-        RayTracer();
+        RayTracer(string scene);
         ~RayTracer();
         bool ParseEvent(Event& name);
         void EditShader(string in_file, string out_file);
@@ -57,6 +57,7 @@ class RayTracer {
         float currentTime_;
         float fpsTime_;
         unsigned int frameCounter_;
+        string scene_;
 };
 
 #endif  // SRC_INCLUDE_RAY_TRACER_H_
